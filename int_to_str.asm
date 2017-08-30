@@ -8,7 +8,7 @@ jmp 0x0000:_main
 ; Made by Jose Gerson Fialho Neto - jgfn1@github.com
 ;
 
-integer db 0
+integer dw 0
 ten db 10
 
 ;--------------------------main--------------------------; 
@@ -20,6 +20,7 @@ jmp end
 ; Function which converts a string to an integer.
 ; To use it, put the string pointer in the si reg and
 ; then get the result in the "integer" variable.
+; Make sure AX and BX does not contain any important data.
 ; 
 ; for(si=0; string[i] != '\0'; ++si)
 ; {
@@ -30,18 +31,18 @@ string_to_int:
 
 	.loop:
 		
-		mov al, byte[integer]
-		mov al, [si] 			;equivalent to the first part of lodsb
-		cmp al, 0 				;if string[si] == 0
+		mov ax, word[integer]
+		mov ax, [si] 			;equivalent to the first part of lodsb
+		cmp ax, 0 				;if string[si] == 0
 		je .endfunc 			; jump to endfunc
 
-		mov al, byte[ten] 		;multiplies the integer by 10
-		mul byte[integer]
-		mov byte[integer], al
+		mov ax, word[ten] 		;multiplies the integer by 10
+		mul word[integer]
+		mov word[integer], ax
 		
-		mov bl, [si]
-		add byte[integer], bl	;integer + si (ASCII)
-		sub byte [integer], 48	;integer - 48 (integer)
+		mov bx, [si]
+		add word[integer], bx	;integer + si (ASCII)
+		sub word [integer], 48	;integer - 48 (integer)
 
 		inc si 					;second part of lodsb
 
