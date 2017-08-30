@@ -1,8 +1,7 @@
 org 0x7c00
 jmp 0x0000:_main
 
-; Converts int to string and vice-versa storing 
-; values in 16 bits registers.
+; Converts int16 to string and vice-versa.
 ;
 ; Assembly is the best-worst love of all time.
 ; Made by Jose Gerson Fialho Neto - jgfn1@github.com
@@ -10,12 +9,31 @@ jmp 0x0000:_main
 
 integer dw 0
 ten db 10
+string db "200", 0
 
 ;--------------------------main--------------------------; 
 _main:
 
+	mov si, string
+	call string_to_int
+
+	; mov al, 'v'
+	; call print_char
+	
+	cmp word[integer], 200
+	je teste
+
+	mov ax, word[integer]
+	call int_to_string
+
 jmp end
 ;--------------------------main_end----------------------; 
+
+
+teste:
+	mov al, 'x'
+	call print_char
+ret
 
 ; Function which converts a string to an integer.
 ; To use it, put the string pointer in the si reg and
@@ -56,16 +74,26 @@ ret
 ; dx and cl.
 int_to_string:					;prints the integer in ax
 
+
 	xor dx, dx
 	xor cl, cl
 	
 	.sts:						;let the fun begin (sts = send to stack)
-			div byte[ten]		;divides ax by cl(10), saves the quocient in al and the remainder in ah
+			
+			xor dx, dx
+			div byte[ten]		;divides ax by 10, saves the quocient in al and the remainder in ah
+			
+			; push ax
+			; mov al, 'k'
+			; call print_char
+			; pop ax
+
 			mov dl, ah			;sends the remainder to dl
 			mov ah, 0			;ah = 0
 			push dx				;sends dx to the stack
 			inc cl				;increments cl
 			cmp al, 0			;compares the quocient(al) with 0
+
 	jne .sts					;if it's not 0, sends the next char to the stack
 
 	.print:						;else
@@ -77,6 +105,13 @@ int_to_string:					;prints the integer in ax
 	jne .print					;if the counter != 0, prints the next char
 
 ret								;else, returns
+
+;Save the char in the reg al before using this function.
+print_char:				
+	mov ah,0xe			;code of the instruction to print a char which is in al
+	mov bl,0xf			;char color - white
+	int 10h				;video interruption.
+ret
 
 end:
 jmp $
