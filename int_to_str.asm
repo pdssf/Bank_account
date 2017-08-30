@@ -1,5 +1,5 @@
-; Int to string and string to int converter storing 
-; values in 32 bits registers.
+; Converts int to string and vice-versa storing 
+; values in 16 bits registers.
 ;
 ; Assembly is the best-worst love of all time.
 ; Made by Jose Gerson Fialho Neto - jgfn1@github.com
@@ -9,9 +9,11 @@ jmp 0x0000:_main
 
 integer db 0
 
+;--------------------------main--------------------------; 
 _main:
 
 jmp end
+;--------------------------main_end----------------------; 
 
 ; Function which converts a string to an integer.
 ; To use it, put the string pointer in the si reg and
@@ -49,7 +51,7 @@ ret
 ; To use this function, put the value you wanna print in the
 ; reg ax and be sure that there's no important data in the regs
 ; dx and cl.
-print_int:			;mostra inteiro em al como string na tela
+int_to_string:
 	xor dx, dx
 	xor cl, cl
 	.sts:			;começa conversão (sts = send to stack)
