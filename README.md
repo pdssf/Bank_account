@@ -1,2 +1,4 @@
 # Bank_account
-Bank account made in x86 NASM Assembly for the hardware-software interface discipline of the Federal University of Pernambuco.
+Bank account made in NASM Assembly x86 for the Hardware-Software Interface discipline of the Federal University of Pernambuco.
+@pdssf
+@jgfn1
