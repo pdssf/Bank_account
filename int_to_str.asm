@@ -1,11 +1,12 @@
+org 0x7c00
+jmp 0x0000:_main
+
 ; Converts int to string and vice-versa storing 
 ; values in 16 bits registers.
 ;
 ; Assembly is the best-worst love of all time.
 ; Made by Jose Gerson Fialho Neto - jgfn1@github.com
 ;
-org 0x7c00
-jmp 0x0000:_main
 
 integer db 0
 ten db 10
@@ -52,7 +53,7 @@ ret
 ; To use this function, put the value you wanna print in the
 ; reg ax and be sure that there's no important data in the regs
 ; dx and cl.
-int_to_string:
+int_to_string:					;prints the integer in ax
 
 	xor dx, dx
 	xor cl, cl
@@ -66,11 +67,9 @@ int_to_string:
 			cmp al, 0			;compares the quocient(al) with 0
 	jne .sts					;if it's not 0, sends the next char to the stack
 
-;THIS PART NEEDS TO BE CHANGED SINCE WE DON'T ACTUALLY WANNA PRINT THE INT 
-;BUT SAVE IT SOMEWHERE.
 	.print:						;else
 			pop ax				;pops to ax
-			add al, 48			;transforms the int int char
+			add al, 48			;transforms the int into char
 			call print_char		;prints char which's in al
 			dec cl				;decrements cl
 			cmp cl, 0			;compares cl with 0
