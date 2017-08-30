@@ -8,6 +8,7 @@ org 0x7c00
 jmp 0x0000:_main
 
 integer db 0
+ten db 10
 
 ;--------------------------main--------------------------; 
 _main:
@@ -54,24 +55,24 @@ ret
 int_to_string:
 	xor dx, dx
 	xor cl, cl
-	.sts:			;começa conversão (sts = send to stack)
-			div byte[ten]		;divide ax por cl(10) salva quociente em al e resto em ah
-			mov dl, ah		;manda ah pra dl
-			mov ah, 0		;zera ah
-			push dx			;manda dx pra pilha
-			inc cl			;incrementa cl
-			cmp al, 0		;compara o quociente(al) com 0
-			jne .sts		;se não for 0 manda próximo caractere para pilha
+	.sts:						;let the fun begin (sts = send to stack)
+			div byte[ten]		;divides ax by cl(10), saves the quocient in al and the remainder in ah
+			mov dl, ah			;sends the remainder to dl
+			mov ah, 0			;ah = 0
+			push dx				;sends dx to the stack
+			inc cl				;increments cl
+			cmp al, 0			;compares the quocient(al) with 0
+			jne .sts			;if it's not 0, sends the next char to the stack
 
-	.print:						;caso contrário
-			pop ax			;pop na pilha pra ax
-			add al, 48		;transforma numero em char
-			call print_char	;imprime char em al
-			dec cl			;decrementa cl
-			cmp cl, 0		;compara cl com 0
-			jne .print		;se o contador não for 0, imprima o próximo char
+	.print:						;else
+			pop ax				;pops to ax
+			add al, 48			;transforms the int int char
+			call print_char		;prints char which's in al
+			dec cl				;decrements cl
+			cmp cl, 0			;compares cl with 0
+			jne .print			;if the counter != 0, prints the next char
 
-ret				;caso contrario, retorne
+ret								;else, returns
 
 end:
 jmp $
