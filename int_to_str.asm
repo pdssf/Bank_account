@@ -53,8 +53,10 @@ ret
 ; reg ax and be sure that there's no important data in the regs
 ; dx and cl.
 int_to_string:
+
 	xor dx, dx
 	xor cl, cl
+	
 	.sts:						;let the fun begin (sts = send to stack)
 			div byte[ten]		;divides ax by cl(10), saves the quocient in al and the remainder in ah
 			mov dl, ah			;sends the remainder to dl
@@ -62,15 +64,17 @@ int_to_string:
 			push dx				;sends dx to the stack
 			inc cl				;increments cl
 			cmp al, 0			;compares the quocient(al) with 0
-			jne .sts			;if it's not 0, sends the next char to the stack
+	jne .sts					;if it's not 0, sends the next char to the stack
 
+;THIS PART NEEDS TO BE CHANGED SINCE WE DON'T ACTUALLY WANNA PRINT THE INT 
+;BUT SAVE IT SOMEWHERE.
 	.print:						;else
 			pop ax				;pops to ax
 			add al, 48			;transforms the int int char
 			call print_char		;prints char which's in al
 			dec cl				;decrements cl
 			cmp cl, 0			;compares cl with 0
-			jne .print			;if the counter != 0, prints the next char
+	jne .print					;if the counter != 0, prints the next char
 
 ret								;else, returns
 
