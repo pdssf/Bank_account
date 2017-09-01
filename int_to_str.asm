@@ -8,19 +8,20 @@ jmp 0x0000:_main
 ;
 
 integer dw 0
-ten db 10
-string db "200", 0
+ten dw 10
+string db '2' ,'5' ,'6' , 0
 
 ;--------------------------main--------------------------; 
 _main:
 
+	xor al, al
 	mov si, string
 	call string_to_int
 
-	; mov al, 'v'
-	; call print_char
+	 ;mov al, 'v'
+	 ;call print_char
 	
-	cmp word[integer], 200
+	cmp word[integer], 0x100
 	je teste
 
 	mov ax, word[integer]
@@ -49,18 +50,22 @@ string_to_int:
 
 	.loop:
 		
-		mov ax, word[integer]
+		;mov ax, word[integer]	
 		mov ax, [si] 			;equivalent to the first part of lodsb
-		cmp ax, 0 				;if string[si] == 0
+		xor ah, ah
+		cmp al, 0 				;if string[si] == 0
 		je .endfunc 			; jump to endfunc
 
-		mov ax, word[ten] 		;multiplies the integer by 10
-		mul word[integer]
+		mov ax, [integer] 		;multiplies the integer by 10
+		mul word[ten]
 		mov word[integer], ax
 		
-		mov bx, [si]
-		add word[integer], bx	;integer + si (ASCII)
-		sub word [integer], 48	;integer - 48 (integer)
+		mov ax, [si]				;coloca em ax o prox algorismo
+		xor ah, ah
+		call print_char
+		sub ax, 48  				;algorismo - '0'
+		add [integer], ax	;integer + si (ASCII)
+		;sub word[integer], 48	;integer - 48 (integer)
 
 		inc si 					;second part of lodsb
 
