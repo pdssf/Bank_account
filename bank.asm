@@ -1,26 +1,38 @@
-0x7C00
-jmp start
+org 0x7C00
+jmp 0x0000:start
 
 STRUC client
     .name resb 21
-    .CPF resb 6                 ;CPF is the Brazillian equivalent to the American Social Security Number
+    .CPF resb 6        ;CPF is the Brazillian equivalent to the American Social Security Number
     .agency resb 6
     .account resb 6
     .validity resb 1
 ENDSTRUC
 
+SEGMENT .data
+cliente: ISTRUC client
+    AT client.name, DB 0
+    AT client.CPF, DB 0        ;CPF is the Brazillian equivalent to the American Social Security Number
+    AT client.agency, DB 0
+    AT client.account, DB 0
+    AT client.validity, DB 0
+IEND
+
 ;string declaration field
 
-option db "Name:"10,13,0
+SEGMENT .bss
+
+option db "Name:", 10,13,0
 
 menu_str db 'Choose your option', 10, 13,'1 - Register New Account', 10, 13, '2 - Query Account', 10, 13, '3 - Edit Account', 10, 13, '4 - Delete Account', 10, 13, '5 - List Agencies', 10, 13, '6 - List Accounts', 10, 13,0
 
-aCliente: 10*cliente_size db 0
-aSize: dw 10
-sSize: dw 40
+cliente_array: resb 10*client.size ;reserves space for 10 structures
+array_size: dw 10
+cliente_size: dw 40 ;unecessary if client.size works out
 
 ;ag_num times 10 db 0 				   ;saves the No. of an agency
 
+SEGMENT .text
 start:
     xor ax,ax
     mov ds,ax
@@ -77,12 +89,12 @@ register:
 	mov di, [si+.conta]			       ;points di to the position in which the account will be written
 	call read_string:				   ;reads the account and saves in .name of the current position
 	
-	.returns
+	;.returns
 ret
 
 ;=======================================/*buscando uma conta:*/
 
-    lea si, [aCliente]                 ;vai para a primeira posição do vetor de contas
+    lea si, [client_array]                 ;vai para a primeira posição do vetor de contas
     busca:
 
     push si
@@ -96,13 +108,13 @@ ret
     mov ax, [bp] 			;carrega o numero a ser buscado (x)
     mov si, [bp + 2] 	;carrega o endereço onde deve ser iniciado a busca (assume-se que v[0])
 
-    mov cx, [aSize] 											;tamanho do vetor pra ser usado na pilha
+    mov cx, [array_size] 											;tamanho do vetor pra ser usado na pilha
 
     compara:
         cmp ax, [si + cliente.conta] ;x == v[i]?
         je salvaEndereco ;se sim, sai do loop
 
-        add si, [sSize] ;se não, i++
+        add si, [cliente_size] ;se não, i++
         loop compara
 
     mov si, string 
@@ -152,13 +164,13 @@ ret
 ;========================================listar agencias:
     listar_agencias:
     
-    lea si, [aCliente+ cliente.agencia]	;move primeira conta para si: deslocando o tamanho
+    lea si, [client_array+ cliente.agencia]	;move primeira conta para si: deslocando o tamanho
     													; ate agencia
-    mov cx, aSize				;move para cx o numero de elementos no vetor
+    mov cx, array_size				;move para cx o numero de elementos no vetor
 
     ag_busca:
         lea bx, [si+4]     ;carrega o bit de validade em bx
-        cmp world[bx],0		;verifica se esta livre
+        cmp word[bx],0		;verifica se esta livre
         je notprint        ;caso não seja uma posicao valida
 
         mov ax,[si]        ;movo o numero da agencia para ax
@@ -168,7 +180,7 @@ ret
         call print_number	;chama o procedimendo para imprimir numero
     notprint:					;caso nao precise printar
 
-        add si, word[sSize];avança para a proxima(si+28)
+        add si, word[cliente_size];avança para a proxima(si+28)
         loop ag_busca
         jmp menu
     agfetch:            ;compara ax com as contas existentes em ag_num
@@ -184,9 +196,9 @@ ret
     
 ;========================================listar contas
 listar_contas:
-    lea si, [aCliente+cliente.conta]	;move primeira conta para si: 
+    lea si, [client_array+cliente.conta]	;move primeira conta para si: 
     												;deslocando o tamanho ate conta
-    mov cx, aSize								;move para cx o numero de elementos no vetor
+    mov cx, array_size								;move para cx o numero de elementos no vetor
 
     accountshow:
         lea bx, [si+2]
@@ -195,7 +207,7 @@ listar_contas:
         mov ax,[si]         ;movo o numero da conta para ax
         call print_number   ;chamo o procedimendo para imprimir
     semconta:
-        add si, word[sSize]								           ;avança para a proxima(si+28)
+        add si, word[cliente_size]								           ;avança para a proxima(si+28)
     loop accountshow
 ret    
 ;========================================
@@ -232,9 +244,9 @@ cmp_str:
 ret
 ;========================================
 procura: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
-	lea si, [aCliente+cliente.validade]	;seleciona o bit de validade da struc 
+	lea si, [client_array+cliente.validade]	;seleciona o bit de validade da struc 
     												;deslocando o tamanho ate validade
-   mov cx, aSize								;move para cx o numero de elementos no vetor
+   mov cx, array_size								;move para cx o numero de elementos no vetor
    .search_account:
    	lea bx, [si+cliente.validade]		;coloca o que esta armazenado em si+.validade
    												; em bx para comparar
@@ -243,7 +255,7 @@ procura: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:regi
    	mov [si+cliente.validade], 1     ;movo o numero da conta para ax
    	ret  										;retorna apos preencher a posicao valida
    .invalida:
-   	add si, word[sSize]					;avança para a proxima(si+28)
+   	add si, word[cliente_size]					;avança para a proxima(si+28)
    loop .search_account						;se sair desse loop, nao encontrou espaco   
 ret
 ;========================================    
