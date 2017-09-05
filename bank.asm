@@ -1,45 +1,44 @@
 0x7C00
 jmp start
 
-STRUC cliente
-    .nome resb 21
-    .CPF resb 6
-    .agencia resb 6
-    .conta resb 6
-    .validade resb 1
+STRUC client
+    .name resb 21
+    .CPF resb 6                 ;CPF is the Brazillian equivalent to the American Social Security Number
+    .agency resb 6
+    .account resb 6
+    .validity resb 1
 ENDSTRUC
 
-;campo de declaracao de string
+;string declaration field
 
-opcao db "Nome:"10,13,0
+option db "Name:"10,13,0
 
-Menu db 'escolha sua opcao', 10, 13,'1-casdastrar nova conta', 10, 13, '2-buscar conta', 10, 13, '3-editar conta', 10, 13, '4-deletar conta', 10, 13, '5-listar agencias', 10, 13, '6-listar contas', 10, 13,0
-
+menu_str db 'Choose your option', 10, 13,'1 - Register New Account', 10, 13, '2 - Query Account', 10, 13, '3 - Edit Account', 10, 13, '4 - Delete Account', 10, 13, '5 - List Agencies', 10, 13, '6 - List Accounts', 10, 13,0
 
 aCliente: 10*cliente_size db 0
 aSize: dw 10
 sSize: dw 40
 
-;ag_num times 10 db 0 					;guarda o num de uma agencia
+;ag_num times 10 db 0 				   ;saves the No. of an agency
 
 start:
     xor ax,ax
     mov ds,ax
     
-	 mov ah, 0 						;inicia o modo de video
+	 mov ah, 0 						   ;enters the video mode
 	 mov al, 12h
 	 int 10h
 	
 menu:
-    mov si, Menu
+    mov si, menu_str
     print_menu:
-    	lodsb                          ;Carrega um byte de DS:SI em AL e depois incrementa SI
-    	mov ah, 0xe                    ;Código da instrução de imprimir um caractere que está em al
+    	lodsb                          ;loads a byte from DS:SI into AL and then increments SI
+    	mov ah, 0xe                    ;code of the instruction to print a char which is in al
     	mov bl,0xf
     	mov bh,0
-		int 10h        ;Interrupção de vídeo. 
+		int 10h                        ;video interruption 
 		
-     	cmp  al, 0                     ;0 é o código do \0
+     	cmp  al, 0                     ;checks if it didn't reach the end of the string
 		je done_menu
     jmp print_menu
 done_menu:
@@ -48,39 +47,40 @@ done_menu:
     int 16h
     sub al, '0'
     
-    cmp al, 1 ;/*1-cadastrar nova conta*/
-    	call cadastra
-    cmp al, 2 ;/*2-buscar conta*/
+    cmp al, 1                           ;1 - Register New Account
+    	call register
+    cmp al, 2                           ;2 - Query Account
     
-    cmp al, 3 ;/*3-editar conta*/
+    cmp al, 3                           ;3 - Edit Account
     
-    cmp al, 4 ;/*4-deletar conta*/
+    cmp al, 4                           ;4 - Delete Account
     
-    cmp al, 5 ;/*5-listar agencias*/
+    cmp al, 5                           ;5 - List Agencies
     	call listar_agencias
-    cmp al, 6 ;/*6-listar contas*/
+    cmp al, 6                           ;6 - List Accounts
     	call listar_contas
-jmp Menu
-;=======================================/*Cadastra uma nova conta:*/
-cadastra:
-	mov DI, opcao 			;/*Nome: ...*/ 
-	call print_string:			;printa "Nome:"
-	call procura:      			;procura um espaco vazio da estrutura
-	;cmp si, tam_vet				;compara si com o tam do vetor
-	;je .retorna					;caso nao encontre espaco valido
-	mov DI, [si+.nome]			;coloca em DI a posicao onde vai escrever o nome
-	call read_string:				;le o nome e salva em .nome da pos atual
-	mov DI, [si+.CPF]				;coloca em DI a posicao onde vai escrever o CPF
-	call read_string:				;le o CPF e salva em .nome da pos atual
-	mov DI, [si+.agencia]		;coloca em DI a posicao onde vai escrever a agencia
-	call read_string:				;le a agencia e salva em .nome da pos atual
-	mov DI, [si+.conta]			;coloca em DI a posicao onde vai escrever a conta
-	call read_string:				;le a conta e salva em .nome da pos atual
+jmp menu_str
+
+;======================================= Registers a new account:
+register:
+	mov di, option 			           ;/*Name: ...*/ 
+	call print_string:			       ;prints "Name:"
+	call searchs:      			       ;searchs for an empty slot in the structure
+	;cmp si, vec_size				   ;compares si with vec_size
+	;je .returns					   ;returns in case there's no such slot
+	mov di, [si+.nome]			       ;points di to the position in wich the name will be written
+	call read_string:				   ;reads the name and saves in .name of the current position
+	mov di, [si+.CPF]				   ;points di to the position in which the CPF will be written
+	call read_string:				   ;reads the CPF and stores in .name of the current position
+	mov di, [si+.agencia]		       ;points di to the position in which the agency will be written
+	call read_string:				   ;reads the agency and saves in .name of the current position
+	mov di, [si+.conta]			       ;points di to the position in which the account will be written
+	call read_string:				   ;reads the account and saves in .name of the current position
 	
-	.retorna
+	.returns
 ret
 
-;========================================/*buscando uma conta:*/
+;=======================================/*buscando uma conta:*/
 
     lea si, [aCliente]                 ;vai para a primeira posição do vetor de contas
     busca:
@@ -231,7 +231,7 @@ cmp_str:
 	
 ret
 ;========================================
-procura: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:cadastrar conta)*/
+procura: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
 	lea si, [aCliente+cliente.validade]	;seleciona o bit de validade da struc 
     												;deslocando o tamanho ate validade
    mov cx, aSize								;move para cx o numero de elementos no vetor
