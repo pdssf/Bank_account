@@ -112,7 +112,7 @@ find_account:
         je salvaEndereco ;se sim, sai do loop
 
         add si, [client_size] ;se não, i++
-        loop compara
+    loop compara
 
     mov si, string 
     call print_string 	;caso a conta buscada não exista, informa ao usuario e
@@ -161,50 +161,36 @@ ret
 ;========================================listar agencias:
     list_agencies:
     
-    lea si, [client_array+ register.agency]	;move primeira conta para si: deslocando o tamanho
+    lea dx, [client_array]	;move primeira conta para si: deslocando o tamanho
     													; ate agencia
-    mov cx, array_size				;move para cx o numero de elementos no vetor
+    mov cx, word[array_size]				;move para cx o numero de elementos no vetor
 
     ag_busca:
-        lea bx, [si+4]     ;carrega o bit de validade em bx
+        lea bx, [dx+register.validity]     ;carrega o bit de validade em bx
         cmp word[bx],0		;verifica se esta livre
         je notprint        ;caso não seja uma posicao valida
-
-        mov ax,[si]        ;movo o numero da agencia para ax
-        mov bx, ag_num		;
-        call agfetch
+        lea si,[dx+ register.agency] ;SI now point to the agency number
     back:
-        call print_number	;chama o procedimendo para imprimir numero
+        call print_string	;chama o procedimendo para imprimir numero
     notprint:					;caso nao precise printar
-
-        add si, word[client_size];avança para a proxima(si+28)
+        add dx, word[client_size];avança para a proxima(si+28)
         loop ag_busca
-        jmp menu
-    agfetch:            ;compara ax com as contas existentes em ag_num
-        cmp ax, word[bx]
-        je notprint
-        
-        add bx,4
-        cmp word[bx],0
-        jne agfetch
-        
-        mov [bx],ax
-    jmp back
-    
+    ret
+  
 ;========================================listar contas:
 list_accounts:
-    lea si, [client_array+register.account]	;move primeira conta para si: 
+    lea dx, [client_array]	;move primeira conta para dx: 
     												;deslocando o tamanho ate conta
-    mov cx, array_size								;move para cx o numero de elementos no vetor
+    mov cx, word[array_size]								;move para cx o numero de elementos no vetor
 
     accountshow:
-        lea bx, [si+2]
+        lea bx, [dx+register.validity]
         cmp word[bx],0
-        je semconta         ;caso não seja uma posicao valida
-        mov ax,[si]         ;movo o numero da conta para ax
+        je not_acc         ;caso não seja uma posicao valida
+        lea si,[dx+register.account]
         call print_number   ;chamo o procedimendo para imprimir
-    semconta:
-        add si, word[client_size]								           ;avança para a proxima(si+28)
+    not_acc:
+        add dx, word[client_size]	;avança para a proxima(si+28)
     loop accountshow
 ret    
 ;========================================:
