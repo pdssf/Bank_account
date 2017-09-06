@@ -1,36 +1,34 @@
 org 0x7C00
 jmp 0x0000:start
 
-STRUC client
+STRUC register
     .name resb 21
     .CPF resb 6        ;CPF is the Brazillian equivalent to the American Social Security Number
     .agency resb 6
     .account resb 6
     .validity resb 1
+		.size:
 ENDSTRUC
 
-SEGMENT .data
-cliente: ISTRUC client
-    AT client.name, DB 0
-    AT client.CPF, DB 0        ;CPF is the Brazillian equivalent to the American Social Security Number
-    AT client.agency, DB 0
-    AT client.account, DB 0
-    AT client.validity, DB 0
+SEGMENT .data									;declarando variavel do tipo register
+client: ISTRUC register
+    AT register.name, DB 0 ;bank.asm:15: error: non-constant argument supplied to TIMES    https://forum.nasm.us/index.php?topic=748.0
+
+    AT register.CPF, DB 0        ;CPF is the Brazillian equivalent to the American Social Security Number
+    AT register.agency, DB 0
+    AT register.account, DB 0
+    AT register.validity, DB 0
 IEND
 
 ;string declaration field
+option db "Name:", 10,13,0
+menu_str db 'Choose your option', 10, 13,'1 - Register New Account', 10, 13, '2 - Query Account', 10, 13, '3 - Edit Account', 10, 13, '4 - Delete Account', 10, 13, '5 - List Agencies', 10, 13, '6 - List Accounts', 10, 13,0
+array_size: dw 10
 
 SEGMENT .bss
 
-option db "Name:", 10,13,0
-
-menu_str db 'Choose your option', 10, 13,'1 - Register New Account', 10, 13, '2 - Query Account', 10, 13, '3 - Edit Account', 10, 13, '4 - Delete Account', 10, 13, '5 - List Agencies', 10, 13, '6 - List Accounts', 10, 13,0
-
-cliente_array: resb 10*client.size ;reserves space for 10 structures
-array_size: dw 10
-cliente_size: dw 40 ;unecessary if client.size works out
-
-;ag_num times 10 db 0 				   ;saves the No. of an agency
+client_array: resb 10*register.size ;reserves space for 10 structures
+client_size:	EQU ($ - client_array) / register.size
 
 SEGMENT .text
 start:
@@ -60,42 +58,41 @@ done_menu:
     sub al, '0'
     
     cmp al, 1                           ;1 - Register New Account
-    	call register
-    cmp al, 2                           ;2 - Query Account
+    	call create
+    cmp al, 2                           ;2 - find Account
     
     cmp al, 3                           ;3 - Edit Account
     
     cmp al, 4                           ;4 - Delete Account
     
     cmp al, 5                           ;5 - List Agencies
-    	call listar_agencias
+    	call list_agencies
     cmp al, 6                           ;6 - List Accounts
-    	call listar_contas
-jmp menu_str
+    	call list_accounts
+jmp menu
 
 ;======================================= Registers a new account:
-register:
+create:
 	mov di, option 			           ;/*Name: ...*/ 
-	call print_string:			       ;prints "Name:"
-	call searchs:      			       ;searchs for an empty slot in the structure
+	call print_string			       ;prints "Name:"
+	call searches      			       ;searchs for an empty slot in the structure
 	;cmp si, vec_size				   ;compares si with vec_size
 	;je .returns					   ;returns in case there's no such slot
-	mov di, [si+.nome]			       ;points di to the position in wich the name will be written
-	call read_string:				   ;reads the name and saves in .name of the current position
-	mov di, [si+.CPF]				   ;points di to the position in which the CPF will be written
-	call read_string:				   ;reads the CPF and stores in .name of the current position
-	mov di, [si+.agencia]		       ;points di to the position in which the agency will be written
-	call read_string:				   ;reads the agency and saves in .name of the current position
-	mov di, [si+.conta]			       ;points di to the position in which the account will be written
-	call read_string:				   ;reads the account and saves in .name of the current position
+	mov di, [si+register.name]			       ;points di to the position in wich the name will be written
+	call read_string				   ;reads the name and saves in .name of the current position
+	mov di, [si+register.CPF]				   ;points di to the position in which the CPF will be written
+	call read_string				   ;reads the CPF and stores in .name of the current position
+	mov di, [si+register.agency]		       ;points di to the position in which the agency will be written
+	call read_string				   ;reads the agency and saves in .name of the current position
+	mov di, [si+register.account]			       ;points di to the position in which the account will be written
+	call read_string				   ;reads the account and saves in .name of the current position
 	
 	;.returns
 ret
 
-;=======================================/*buscando uma conta:*/
-
-    lea si, [client_array]                 ;vai para a primeira posição do vetor de contas
-    busca:
+;=======================================/*buscando uma conta:*/:
+find_account:
+    ;lea si, [client_array]                 ;vai para a primeira posição do vetor de contas
 
     push si
     push ax
@@ -111,10 +108,10 @@ ret
     mov cx, [array_size] 											;tamanho do vetor pra ser usado na pilha
 
     compara:
-        cmp ax, [si + cliente.conta] ;x == v[i]?
+        cmp ax, [si + register.account] ;x == v[i]?
         je salvaEndereco ;se sim, sai do loop
 
-        add si, [cliente_size] ;se não, i++
+        add si, [client_size] ;se não, i++
         loop compara
 
     mov si, string 
@@ -131,7 +128,7 @@ ret
         pop ax
         pop si ;restaura os valores originais dos registradores usados no call
         ret 2 ;retorna incrementando sp em 2 para sobrescrever o local onde estava o parametro x
-
+ret
 ;========================================deletando uma conta:
 
     deleta:
@@ -152,7 +149,7 @@ ret
     cmp si, -1 
     jne fimDeleta ;se busca retornar -1, ou seja, a conta não existe pula pro final
 
-    mov word[si + cliente.validade], 0 ;caso contrario sobrescreve o bit validade 
+    mov word[si + register.validity], 0 ;caso contrario sobrescreve o bit validade 
     												;"apagando" a conta
 
     fimDeleta:
@@ -162,9 +159,9 @@ ret
         ret 4 ;retorna sobrescrevendo os paramentros contidos na pilha
 
 ;========================================listar agencias:
-    listar_agencias:
+    list_agencies:
     
-    lea si, [client_array+ cliente.agencia]	;move primeira conta para si: deslocando o tamanho
+    lea si, [client_array+ register.agency]	;move primeira conta para si: deslocando o tamanho
     													; ate agencia
     mov cx, array_size				;move para cx o numero de elementos no vetor
 
@@ -180,7 +177,7 @@ ret
         call print_number	;chama o procedimendo para imprimir numero
     notprint:					;caso nao precise printar
 
-        add si, word[cliente_size];avança para a proxima(si+28)
+        add si, word[client_size];avança para a proxima(si+28)
         loop ag_busca
         jmp menu
     agfetch:            ;compara ax com as contas existentes em ag_num
@@ -194,9 +191,9 @@ ret
         mov [bx],ax
     jmp back
     
-;========================================listar contas
-listar_contas:
-    lea si, [client_array+cliente.conta]	;move primeira conta para si: 
+;========================================listar contas:
+list_accounts:
+    lea si, [client_array+register.account]	;move primeira conta para si: 
     												;deslocando o tamanho ate conta
     mov cx, array_size								;move para cx o numero de elementos no vetor
 
@@ -207,10 +204,10 @@ listar_contas:
         mov ax,[si]         ;movo o numero da conta para ax
         call print_number   ;chamo o procedimendo para imprimir
     semconta:
-        add si, word[cliente_size]								           ;avança para a proxima(si+28)
+        add si, word[client_size]								           ;avança para a proxima(si+28)
     loop accountshow
 ret    
-;========================================
+;========================================:
 read_string:	
 	mov ah, 0 	;
 	int 16h 		;  /*AL <- caracter*/				
@@ -225,7 +222,7 @@ read_string:
 	jmp read_string
 	.read:
 ret	
-;========================================
+;========================================:
 print_string:
 	lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 		
 	cmp al,0       ;0 é o código do \0
@@ -238,29 +235,27 @@ print_string:
 	jmp print_string
 	.printed:
 ret
-;========================================
+;========================================:
 cmp_str:
 	
 ret
-;========================================
-procura: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
-	lea si, [client_array+cliente.validade]	;seleciona o bit de validade da struc 
+;========================================:
+searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
+	lea si, [client_array+register.validity]	;seleciona o bit de validade da struc 
     												;deslocando o tamanho ate validade
    mov cx, array_size								;move para cx o numero de elementos no vetor
    .search_account:
-   	lea bx, [si+cliente.validade]		;coloca o que esta armazenado em si+.validade
+   	lea bx, [si+register.validity]		;coloca o que esta armazenado em si+.validade
    												; em bx para comparar
    	cmp word[bx], 1						;caso a posicao esteja ocupada, avanca para prox posicao
    	je .invalida        					;caso não seja uma posicao valida
-   	mov [si+cliente.validade], 1     ;movo o numero da conta para ax
+   	mov [si+register.validity], 1     ;movo o numero da conta para ax
    	ret  										;retorna apos preencher a posicao valida
    .invalida:
-   	add si, word[cliente_size]					;avança para a proxima(si+28)
+   	add si, word[client_size]					;avança para a proxima(si+28)
    loop .search_account						;se sair desse loop, nao encontrou espaco   
 ret
-;========================================    
+;========================================:
 end:
 times 510 - ($ - $$) db 0
 dw 0xAA55
-
-
