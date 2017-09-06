@@ -1,4 +1,4 @@
-org 0x7C00
+org 0x7E00
 jmp 0x0000:start
 
 STRUC register
