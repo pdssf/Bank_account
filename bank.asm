@@ -1,4 +1,4 @@
-org 0x7C00
+org 0x7E00
 jmp 0x0000:start
 
 main_menu db 'escolha sua opcao', 10, 13,'1-casdastrar nova conta', 10, 13, '2-buscar conta', 10, 13, '3-editar conta', 10, 13, '4-deletar conta', 10, 13, '5-listar agencias', 10, 13, '6-listar contas', 10, 13,0
@@ -67,7 +67,10 @@ done_menu:
     sub al, '0'
     
     cmp al, 1                           ;1 - Register New Account
+    jne not_1
     	call create
+    jmp menu
+    not_1:	
     cmp al, 2                           ;2 - find Account
     
     cmp al, 3                           ;3 - Edit Account
@@ -75,10 +78,17 @@ done_menu:
     cmp al, 4                           ;4 - Delete Account
     
     cmp al, 5                           ;5 - List Agencies
-    	;call list_agencies
+    jne not_5
+    	call list_agencies
+    jmp menu
+    not_5:
     cmp al, 6                           ;6 - List Accounts
-    	;call list_accounts
+    jne not_6
+    	call list_accounts
+    jmp menu
+    not_6:
 jmp menu
+
 
 ;======================================= Registers a new account:
 create:
@@ -116,7 +126,7 @@ find_account:
 
     ;mov cx, [array_size] 											;tamanho do vetor pra ser usado na pilha
 
-    ;compara:
+    ;compara: 
         ;cmp ax, [si + register.account] ;x == v[i]?
         ;je salvaEndereco ;se sim, sai do loop
 
@@ -168,70 +178,61 @@ find_account:
         ;ret 4 ;retorna sobrescrevendo os paramentros contidos na pilha
 
 ;========================================listar agencias:
-    ;list_agencies:
+    list_agencies:
     
-    ;lea si, [client_array+ register.agency]	;move primeira conta para si: deslocando o tamanho
+    lea si, [client_array]	;move primeira conta para si: deslocando o tamanho
     													; ate agencia
-    ;mov cx, array_size				;move para cx o numero de elementos no vetor
+    mov cx, word[array_size]				;move para cx o numero de elementos no vetor
 
-    ;ag_busca:
-        ;lea bx, [si+4]     ;carrega o bit de validade em bx
-        ;cmp word[bx],0		;verifica se esta livre
-        ;je notprint        ;caso não seja uma posicao valida
+    ag_busca:
+        lea bx, [si+register.validity]     ;carrega o bit de validade em bx
+        cmp word[bx],0		;verifica se esta livre
+        je notbusca        ;caso não seja uma posicao valida
 
-        ;mov ax,[si]        ;movo o numero da agencia para ax
-        ;mov bx, ag_num		;
-        ;call agfetch
-    ;back:
-        ;call print_number	;chama o procedimendo para imprimir numero
-    ;notprint:					;caso nao precise printar
-
-        ;add si, word[client_size];avança para a proxima(si+28)
-        ;loop ag_busca
-        ;jmp menu
-    ;agfetch:            ;compara ax com as contas existentes em ag_num
-        ;cmp ax, word[bx]
-        ;je notprint
+        mov ax,[si+ register.agency]        ;movo o numero da agencia para ax
         
-        ;add bx,4
-        ;cmp word[bx],0
-        ;jne agfetch
-        
-        ;mov [bx],ax
-    ;jmp back
+        xchg ax, si
+        ag_prt:
+        lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 		
+            mov ah, 0xe    ;Código da instrução de imprimir um caractere que está em al
+            mov bl, 2      ;Cor do caractere em modos de vídeo gráficos (verde)
+            int 10h        ;Interrupção de vídeo. 
+            cmp al,0       ;0 é o código do \0
+        jne ag_prt
+        ;call print_string	;chama o procedimendo para imprimir numero
+        xchg ax,si
+    notbusca:					;caso nao precise printar
     
+        add si, word[client_size];avança para a proxima(si+28)
+        loop ag_busca
+    
+    ret
 ;========================================listar contas:
-;list_accounts:
-    ;lea si, [client_array+register.account]	;move primeira conta para si: 
-    												;deslocando o tamanho ate conta
-    ;mov cx, array_size								;move para cx o numero de elementos no vetor
 
-    ;accountshow:
-        ;lea bx, [si+2]
-        ;cmp word[bx],0
-        ;je semconta         ;caso não seja uma posicao valida
-        ;mov ax,[si]         ;movo o numero da conta para ax
-        ;call print_number   ;chamo o procedimendo para imprimir
-    ;semconta:
-        ;add si, word[client_size]								           ;avança para a proxima(si+28)
-    ;loop accountshow
-;ret
-;========================================listar contas:
-;list_accounts:
-    ;lea dx, [client_array]	;move primeira conta para dx: 
-    												;deslocando o tamanho ate conta
-    ;mov cx, word[array_size]								;move para cx o numero de elementos no vetor
+list_accounts:
+    lea si, [client_array]	;move primeira conta para dx: 
+                                            ;deslocando o tamanho ate conta
+    mov cx, word[array_size]		;move para cx o numero de elementos no vetor
 
-    ;accountshow:
-        ;lea bx, [dx+register.validity]
-        ;cmp word[bx],0
-        ;je not_acc         ;caso não seja uma posicao valida
-        ;lea si,[dx+register.account]
-        ;call print_number   ;chamo o procedimendo para imprimir
-    ;not_acc:
-        ;add dx, word[client_size]	;avança para a proxima(si+28)
-    ;loop accountshow
-;ret    
+    account_show:
+        lea bx, [si + register.validity]
+        cmp word[bx],0
+        je not_acc         ;caso não seja uma posicao valida
+        mov ax,[si+ register.account]
+        xchg si,ax
+        acc_prt:
+        lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 		
+            mov ah, 0xe    ;Código da instrução de imprimir um caractere que está em al
+            mov bl, 2      ;Cor do caractere em modos de vídeo gráficos (verde)
+            int 10h        ;Interrupção de vídeo. 
+            cmp al,0       ;0 é o código do \0
+        jne acc_prt
+       ; call print_string   ;chamo o procedimendo para imprimir
+        xchg ax, si
+    not_acc:
+        add si, word[client_size]	;avança para a proxima(si+28)
+    loop account_show
+ret    
 ;========================================:
 read_string:	
 	mov ah, 0 	;
@@ -246,6 +247,16 @@ read_string:
 
 	jmp read_string
 	.read:
+	mov al, 13
+    mov ah, 0xe
+    mov bh, 0
+    mov bl, 2
+    int 10h
+    mov al, 10
+    mov ah, 0xe                    
+    mov bl,2
+    mov bh,0
+    int 10h 
 ret	
 ;========================================:
 print_string:
@@ -259,16 +270,50 @@ print_string:
 
 	jmp print_string
 	.printed:
+    mov al, 13
+    mov ah, 0xe
+    mov bh, 0
+    mov bl, 2
+    int 10h
+    mov al, 10
+    mov ah, 0xe                    
+    mov bl,2
+    mov bh,0
+    int 10h
 ret
+;ax = end1, bx = end2, cx = tam_string
+;i=0
+;while(ax[i] != '\0'){
+;  if((ax[i]-bx[i])!=0){
+;    return ax[i]-bx[i];
+;  }
+;  else
+;  	i++;
+;}
+;return 0;
+;
+;while(ax[i] == bx[i])
+;
+;
+;
+;
 ;========================================:
-cmp_str:
+strcmp:	;/*compara 2 strings em ax e bx*/
+;	cmp byte[ax], byte[bx] ; compara letra por letra
+	
 	
 ret
 ;========================================:
+miscmp:
+	;/*compara 2 strings em ES:DI e DS:SI não esquecer de setar cx com o tamanho das strings*/
+	repe cmpsb			;/*repete enquanto cx!=0 e ZF==1*/
+	;/*retorna, e deve ser verificado o conteudo de CX*/
+ret
+;========================================:
 searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
-	lea si, [client_array+register.validity]	;seleciona o bit de validade da struc 
+	lea si, [client_array]	;seleciona o bit de validade da struc 
     												;deslocando o tamanho ate validade
-   mov cx, array_size								;move para cx o numero de elementos no vetor
+   mov cx, word[array_size]								;move para cx o numero de elementos no vetor
    .search_account:
    	lea bx, [si+register.validity]		;coloca o que esta armazenado em si+.validade
    												; em bx para comparar
@@ -278,7 +323,7 @@ searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:reg
    	ret  										;retorna apos preencher a posicao valida
    .invalida:
    	add si, word[client_size]					;avança para a proxima(si+28)
-   loop .search_account						;se sair desse loop, nao encontrou espaco   
+   loop .search_account						;se sair desse loop, nao encontrou espaco
 ret
 ;========================================:
 print_char:
