@@ -38,6 +38,7 @@ client_size:	EQU ($ - client_array) / register.size
 SEGMENT .text
 
 start:
+
    xor ax,ax
    mov ds,ax
     	
@@ -53,6 +54,7 @@ start:
    int 10h
 	
 menu:
+
     mov si, menu_str
     print_menu:
     	lodsb                          ;loads a byte from DS:SI into AL and then increments SI  
@@ -64,6 +66,7 @@ menu:
      	cmp  al, 0                     ;checks if it didn't reach the end of the string
 		je done_menu
     jmp print_menu
+
 done_menu:
 	
     mov ah, 0
