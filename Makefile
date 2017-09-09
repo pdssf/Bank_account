@@ -14,7 +14,7 @@ file = $(bootdisk)
 
 # adicionem os targets do kernel e do segundo estágio para usar o make all com eles
 
-all: clean mydisk boot1 write_boot1 boot2 write_boot2 hexdump finish launchqemu 
+all: clean mydisk boot1 write_boot1 boot2 write_boot2 hexdump finish launchqemu finish1
 
 mydisk: 
 	dd if=/dev/zero of=$(bootdisk) bs=$(blocksize) count=$(disksize) status=noxfer
@@ -45,4 +45,7 @@ clean:
 	rm -f *.bin $(bootdisk) *~
 
 finish:
+	clear
+
+finish1:
 	clear
