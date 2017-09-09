@@ -1,9 +1,10 @@
 org 0x7E00
 jmp 0x0000:start
 
-menu_str db 'Choose your option:', 10, 13,10, 13,'1 - Register New Account', 10, 13,10, 13, '2 - Query Account', 10, 13,10, 13, '3 - Edit Account', 10, 13,10, 13, '4 - Delete Account', 10, 13,10, 13, '5 - List Agencies', 10, 13,10, 13, '6 - List Accounts', 10, 13,10, 13,0
+menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13,10, 13,0
+option db 10,13,'Name:','  ',0
 ;main_menu db 'Escolha sua opcao:', 10, 13,'1 - Casdastrar nova conta', 10, 13, '2 - Buscar conta', 10, 13, '3 - Editar conta', 10, 13, '4 - Deletar conta', 10, 13, '5 - Listar agencias', 10, 13, '6 - Listar contas', 10, 13,0
-option db 'Name:', 10,13,0
+;main_menu1 db 'escolha sua opcao', 10, 13,'1-casdastrar nova conta', 10, 13, '2-buscar conta', 10, 13, '3-editar conta', 10, 13, '4-deletar conta', 10, 13, '5-listar agencias', 10, 13, '6-listar contas', 10, 13,0
 
 STRUC register
     .name resb 21
@@ -97,13 +98,16 @@ create:
 	call searches      			       ;searchs for an empty slot in the structure
 	;cmp si, vec_size				   ;compares si with vec_size
 	;je .returns					   ;returns in case there's no such slot
-	mov di, [si+register.name]			       ;points di to the position in wich the name will be written
+	mov di, [si+register.name]		   ;points di to the position in wich the name will be written
 	call read_string				   ;reads the name and saves in .name of the current position
-	mov di, [si+register.CPF]				   ;points di to the position in which the CPF will be written
+	
+    mov di, [si+register.CPF]		   ;points di to the position in which the CPF will be written
 	call read_string				   ;reads the CPF and stores in .name of the current position
-	mov di, [si+register.agency]		       ;points di to the position in which the agency will be written
+	
+    mov di, [si+register.agency]	   ;points di to the position in which the agency will be written
 	call read_string				   ;reads the agency and saves in .name of the current position
-	mov di, [si+register.account]			       ;points di to the position in which the account will be written
+	
+    mov di, [si+register.account]	   ;points di to the position in which the account will be written
 	call read_string				   ;reads the account and saves in .name of the current position
 	
 	;.returns
@@ -265,21 +269,11 @@ print_string:
 	je .printed
 
 	mov ah, 0xe    ;Código da instrução de imprimir um caractere que está em al
-	mov bl, 2      ;Cor do caractere em modos de vídeo gráficos (verde)
+	mov bl, 14      ;Cor do caractere em modos de vídeo gráficos (vermelho)
 	int 10h        ;Interrupção de vídeo. 
 
 	jmp print_string
 	.printed:
-    mov al, 13
-    mov ah, 0xe
-    mov bh, 0
-    mov bl, 2
-    int 10h
-    mov al, 10
-    mov ah, 0xe                    
-    mov bl,2
-    mov bh,0
-    int 10h
 ret
 ;ax = end1, bx = end2, cx = tam_string
 ;i=0
@@ -288,7 +282,7 @@ ret
 ;    return ax[i]-bx[i];
 ;  }
 ;  else
-;  	i++;
+;  	i++;o
 ;}
 ;return 0;
 ;
@@ -334,5 +328,3 @@ print_char:
 ret
 
 end:
-times 510 - ($ - $$) db 0
-dw 0xAA55

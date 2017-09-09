@@ -7,7 +7,7 @@ boot1=bank_launcher
 # preencha esses valores para rodar o segundo estágio do bootloader
 boot2=bank
 boot2pos=1
-boot2size=4
+boot2size=8
 
 ASMFLAGS=-f bin
 file = $(bootdisk)
