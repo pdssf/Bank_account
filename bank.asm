@@ -1,10 +1,6 @@
 org 0x7E00
 jmp 0x0000:start
 
-menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13,10, 13,0
-option db 10,13,'Name:','  ',0
-;main_menu db 'Escolha sua opcao:', 10, 13,'1 - Casdastrar nova conta', 10, 13, '2 - Buscar conta', 10, 13, '3 - Editar conta', 10, 13, '4 - Deletar conta', 10, 13, '5 - Listar agencias', 10, 13, '6 - Listar contas', 10, 13,0
-;main_menu1 db 'escolha sua opcao', 10, 13,'1-casdastrar nova conta', 10, 13, '2-buscar conta', 10, 13, '3-editar conta', 10, 13, '4-deletar conta', 10, 13, '5-listar agencias', 10, 13, '6-listar contas', 10, 13,0
 
 STRUC register
     .name resb 21
@@ -15,18 +11,24 @@ STRUC register
         .size:
 ENDSTRUC
 
-SEGMENT .data                                   ;declarando variavel do tipo register
-client: ISTRUC register
-    AT register.name, DB 0 ;bank.asm:15: error: non-constant argument supplied to TIMES    https://forum.nasm.us/index.php?topic=748.0
+SEGMENT .data                                   
 
-    AT register.CPF, DB 0        ;CPF is the Brazillian equivalent to the American Social Security Number
+;Variable declaration field
+menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13,10, 13,0
+name_str db 10,13,'Name:  ',0
+cpf_str db 10, 13,'CPF:  ',0
+agency_str db 10, 13, 'Agency:  ',0
+account_str db 10, 13, 'Account:  ',0
+array_size: dw 10
+
+client: ISTRUC register             ;declarando variavel do tipo register
+    AT register.name, DB 0          ;bank.asm:15: error: non-constant argument supplied to TIMES    https://forum.nasm.us/index.php?topic=748.0
+
+    AT register.CPF, DB 0           ;CPF is the Brazillian equivalent to the American Social Security Number
     AT register.agency, DB 0
     AT register.account, DB 0
     AT register.validity, DB 0
 IEND
-
-;string declaration field
-array_size: dw 10
 
 SEGMENT .bss
 
@@ -34,6 +36,7 @@ client_array: resb 10*register.size ;reserves space for 10 structures
 client_size:	EQU ($ - client_array) / register.size
 
 SEGMENT .text
+
 start:
    xor ax,ax
    mov ds,ax
@@ -93,26 +96,35 @@ jmp menu
 
 ;======================================= Registers a new account:
 create:
-	mov si, option 			           ;/*Name: ...*/ 
+	mov si, name_str		            
 	call print_string			       ;prints "Name:"
 	call searches      			       ;searchs for an empty slot in the structure
 	;cmp si, vec_size				   ;compares si with vec_size
 	;je .returns					   ;returns in case there's no such slot
-	mov di, [si+register.name]		   ;points di to the position in wich the name will be written
+	mov di, [si + register.name]	   ;points di to the position in wich the name will be written
 	call read_string				   ;reads the name and saves in .name of the current position
+    
+    push si
+    mov si, cpf_str                   
+    call print_string
+    pop si	
+    ;Zcall searches                      ;searchs for an empty slot in the structure
+    mov di, [si + register.CPF]        ;points di to the position in which the CPF will be written
+    call read_string                   ;reads the CPF and stores in .name of the current position
 	
-    mov di, [si+register.CPF]		   ;points di to the position in which the CPF will be written
-	call read_string				   ;reads the CPF and stores in .name of the current position
-	
-    mov di, [si+register.agency]	   ;points di to the position in which the agency will be written
+    mov si, agency_str                   
+    call print_string
+    mov di, [si + register.agency]	   ;points di to the position in which the agency will be written
 	call read_string				   ;reads the agency and saves in .name of the current position
-	
-    mov di, [si+register.account]	   ;points di to the position in which the account will be written
+
+    mov si, account_str                   
+    call print_string	
+    mov di, [si + register.account]	   ;points di to the position in which the account will be written
 	call read_string				   ;reads the account and saves in .name of the current position
 	
-	;.returns
-ret
-
+	
+ret ;.returns
+ 
 ;=======================================/*buscando uma conta:*/:
 find_account:
     ;lea si, [client_array]                 ;vai para a primeira posição do vetor de contas
@@ -189,11 +201,11 @@ find_account:
     mov cx, word[array_size]				;move para cx o numero de elementos no vetor
 
     ag_busca:
-        lea bx, [si+register.validity]     ;carrega o bit de validade em bx
+        lea bx, [si + register.validity]     ;carrega o bit de validade em bx
         cmp word[bx],0		;verifica se esta livre
         je notbusca        ;caso não seja uma posicao valida
 
-        mov ax,[si+ register.agency]        ;movo o numero da agencia para ax
+        mov ax,[si + register.agency]        ;movo o numero da agencia para ax
         
         xchg ax, si
         ag_prt:
@@ -222,7 +234,7 @@ list_accounts:
         lea bx, [si + register.validity]
         cmp word[bx],0
         je not_acc         ;caso não seja uma posicao valida
-        mov ax,[si+ register.account]
+        mov ax,[si + register.account]
         xchg si,ax
         acc_prt:
         lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 		
@@ -309,11 +321,11 @@ searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:reg
     												;deslocando o tamanho ate validade
    mov cx, word[array_size]								;move para cx o numero de elementos no vetor
    .search_account:
-   	lea bx, [si+register.validity]		;coloca o que esta armazenado em si+.validade
+   	lea bx, [si + register.validity]		;coloca o que esta armazenado em si+.validade
    												; em bx para comparar
    	cmp word[bx], 1						;caso a posicao esteja ocupada, avanca para prox posicao
    	je .invalida        					;caso não seja uma posicao valida
-   	mov byte[si+register.validity], 1     ;movo o numero da conta para ax
+   	mov byte[si + register.validity], 1     ;movo o numero da conta para ax
    	ret  										;retorna apos preencher a posicao valida
    .invalida:
    	add si, word[client_size]					;avança para a proxima(si+28)

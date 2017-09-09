@@ -20,7 +20,7 @@ start:
         read_disk:
 
             mov ah, 2           ;ler disco
-            mov al, 1           ;numero de setrores
+            mov al, 2           ;numero de setrores
             mov ch, 0           ;numero do cilindro (??)
             mov cl, 2           ;numero do setor (2 pois o setor 1 está com o boot1)
             mov dh, 0           ;numero da cabeça
