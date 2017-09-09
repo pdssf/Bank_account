@@ -1,7 +1,8 @@
 org 0x7E00
 jmp 0x0000:start
 
-main_menu db 'escolha sua opcao', 10, 13,'1-casdastrar nova conta', 10, 13, '2-buscar conta', 10, 13, '3-editar conta', 10, 13, '4-deletar conta', 10, 13, '5-listar agencias', 10, 13, '6-listar contas', 10, 13,0
+menu_str db 'Choose your option:', 10, 13,10, 13,'1 - Register New Account', 10, 13,10, 13, '2 - Query Account', 10, 13,10, 13, '3 - Edit Account', 10, 13,10, 13, '4 - Delete Account', 10, 13,10, 13, '5 - List Agencies', 10, 13,10, 13, '6 - List Accounts', 10, 13,10, 13,0
+;main_menu db 'Escolha sua opcao:', 10, 13,'1 - Casdastrar nova conta', 10, 13, '2 - Buscar conta', 10, 13, '3 - Editar conta', 10, 13, '4 - Deletar conta', 10, 13, '5 - Listar agencias', 10, 13, '6 - Listar contas', 10, 13,0
 option db 'Name:', 10,13,0
 
 STRUC register
@@ -10,10 +11,10 @@ STRUC register
     .agency resb 6
     .account resb 6
     .validity resb 1
-		.size:
+        .size:
 ENDSTRUC
 
-SEGMENT .data									;declarando variavel do tipo register
+SEGMENT .data                                   ;declarando variavel do tipo register
 client: ISTRUC register
     AT register.name, DB 0 ;bank.asm:15: error: non-constant argument supplied to TIMES    https://forum.nasm.us/index.php?topic=748.0
 
@@ -24,7 +25,6 @@ client: ISTRUC register
 IEND
 
 ;string declaration field
-menu_str db 'Choose your option', 10, 13,'1 - Register New Account', 10, 13, '2 - Query Account', 10, 13, '3 - Edit Account', 10, 13, '4 - Delete Account', 10, 13, '5 - List Agencies', 10, 13, '6 - List Accounts', 10, 13,0
 array_size: dw 10
 
 SEGMENT .bss
@@ -49,7 +49,7 @@ start:
    int 10h
 	
 menu:
-    mov si, main_menu
+    mov si, menu_str
     print_menu:
     	lodsb                          ;loads a byte from DS:SI into AL and then increments SI  
     	mov ah, 0xe                    ;code of the instruction to print a char which is in al
@@ -332,6 +332,7 @@ print_char:
    mov bh,0
 	int 10h        
 ret
+
 end:
 times 510 - ($ - $$) db 0
 dw 0xAA55
