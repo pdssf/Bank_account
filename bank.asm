@@ -90,6 +90,7 @@ done_menu:
     	call list_agencies
     jmp menu
     not_5:
+    
     cmp al, 6                           ;6 - List Accounts
     jne not_6
     	call list_accounts
@@ -205,56 +206,57 @@ ret
 ;========================================listar agencias:
     list_agencies:
     
-    lea si, [client_array]	;move primeira conta para si: deslocando o tamanho ate agencia
-    mov cx, word[array_size]				;move para cx o numero de elementos no vetor
+    lea di, [client_array]	;move primeira conta para si: deslocando o tamanho ate agencia
+    mov cx, 10				;move para cx o numero de elementos no vetor
 
     ag_busca:
-        lea bx, [si + register.validity]     ;carrega o bit de validade em bx
-        cmp word[bx],0		;verifica se esta livre
+        lea bx, [di + register.validity]     ;carrega o bit de validade em bx
+        cmp byte[bx],0		;verifica se esta livre
         je notbusca        ;caso não seja uma posicao valida
 
-        mov ax,[si + register.agency]        ;movo o numero da agencia para ax
-        
-        xchg ax, si
+        mov si,[di + register.agency]        ;movo o numero da agencia para si
+				mov dx, 6        
+        xchg dx,cx
         ag_prt:
-        lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 		
-            mov ah, 0xe    ;Código da instrução de imprimir um caractere que está em al
-            mov bl, 2      ;Cor do caractere em modos de vídeo gráficos (verde)
-            int 10h        ;Interrupção de vídeo. 
-            cmp al,0       ;0 é o código do \0
-        jne ag_prt
-        ;call print_string	;chama o procedimendo para imprimir numero
-        xchg ax,si
+       		  lodsb          
+            mov ah, 0xe    
+            mov bl, 2      
+            int 10h                    
+       loop ag_prt
+       
+        xchg cx,dx
+        
     notbusca:					;caso nao precise printar
     
-        add si, word[client_size];avança para a proxima(si+28)
+        add di, word[client_size];avança para a proxima(si+28)
         loop ag_busca
     
     ret
 ;========================================listar contas:
 
 list_accounts:
-    lea si, [client_array]	;move primeira conta para dx: 
+    lea di, [client_array]	;move primeira conta para dx: 
                                             ;deslocando o tamanho ate conta
-    mov cx, word[array_size]		;move para cx o numero de elementos no vetor
+    mov cx, 10		;move para cx o numero de elementos no vetor
 
     account_show:
-        lea bx, [si + register.validity]
-        cmp word[bx],0
+        lea bx, [di + register.validity]
+        cmp byte[bx],0
         je not_acc         ;caso não seja uma posicao valida
-        mov ax,[si + register.account]
-        xchg si,ax
+        mov si,[di + register.account]	;posicao do valor da conta
+        xchg bx,cx
+        mov cx, 6
         acc_prt:
-        lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 		
-            mov ah, 0xe    ;Código da instrução de imprimir um caractere que está em al
-            mov bl, 2      ;Cor do caractere em modos de vídeo gráficos (verde)
-            int 10h        ;Interrupção de vídeo. 
-            cmp al,0       ;0 é o código do \0
-        jne acc_prt
-       ; call print_string   ;chamo o procedimendo para imprimir
-        xchg ax, si
+
+        lodsb          
+            mov ah, 0xe    
+            mov bl, 2      
+            int 10h        
+            loop acc_prt
+        xchg cx,bx
+        
     not_acc:
-        add si, word[client_size]	;avança para a proxima(si+28)
+        add di, word[client_size]	;avança para a proxima(si+28)
     loop account_show
 ret    
 ;========================================:
