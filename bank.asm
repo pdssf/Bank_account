@@ -63,9 +63,8 @@ menu:
     	mov bh,0
 		int 10h                        ;video interruption 
 		
-     	cmp  al, 0                     ;checks if it didn't reach the end of the string
-		je done_menu
-    jmp print_menu
+    cmp  al, 0                     ;checks if it didn't reach the end of the string
+    jne print_menu
 
 done_menu:
 	
@@ -133,6 +132,10 @@ register_account:
     mov di, [si + register.account]	   ;points di to the position in which the account will be written
 	call read_string				   ;reads the account and saves in .name of the current position
 	
+	lea si, [client_array+ register.name]
+	call print_string
+	lea si, [agency_str]
+	call print_string
 ret
  
 ;=======================================/*buscando uma conta:*/:
