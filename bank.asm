@@ -1,6 +1,7 @@
 org 0x7E00
 jmp 0x0000:start
 
+nova_string times 20 db 0
 
 STRUC register
     .name resb 21
@@ -8,7 +9,7 @@ STRUC register
     .agency resb 6
     .account resb 6
     .validity resb 1
-        .size:
+    .size:
 ENDSTRUC
 
 SEGMENT .data                                   
@@ -19,11 +20,11 @@ name_str db 10,13,'Name:  ',0
 cpf_str db 10, 13,'CPF:  ',0
 agency_str db 10, 13, 'Agency:  ',0
 account_str db 10, 13, 'Account:  ',0
-array_size: dw 10
+check times 20 db 'Debug:', 0
+array_size db 10
 
 client: ISTRUC register                ;declarando variavel do tipo register
-    AT register.name, DB 0             ;bank.asm:15: error: non-constant argument supplied to TIMES    https://forum.nasm.us/index.php?topic=748.0
-
+    AT register.name, DB 'Paulo',0             
     AT register.CPF, DB 0              ;CPF is the Brazillian equivalent to the American Social Security Number
     AT register.agency, DB 0
     AT register.account, DB 0
@@ -100,18 +101,66 @@ jmp menu
 ;======================================= Registers a new account:
 register_account:
 
+	mov si, client_array
+	mov al, [si+register.validity]
+	add al, 48
+	call print_char
+	call print_enter
+	
+	push si
+	mov si, check		            
+	call print_string			      ;prints "Debug:"
+	pop si
+	
+	mov DI, nova_string
+	;call read_string
+	debugando:
+	mov ah, 0 	;
+	int 16h 		;  /*AL <- caracter*/				
+	stosb 		;	/* tirar de AL->DI*/	
+	cmp al, 13	;
+	je fim
+
+	;call print_char ; /*exibe o que esta sendo escrito na leitura*/
+	mov ah, 0xe
+		mov bl, 2
+		int 10h
+		
+	jmp debugando
+	fim:
+	
+	call print_enter
+	
+	mov si, nova_string
+	call print_string
+	call print_enter
+	
+	push si
 	mov si, name_str		            
-	call print_string			       ;prints "Name:"
-	call searches      			       ;searchs for an empty slot in the structure
+	call print_string			      ;prints "Name:"
+	pop si
+	
+	call searches      			   ;searchs for an empty slot in the structure
 	;cmp si, vec_size				   ;compares si with vec_size
 	;je .returns					   ;returns in case there's no such slot
-	mov di, [si + register.name]	   ;points di to the position in wich the name will be written
+	lea di, [client_array+register.name]					   ;points di to the position in wich the name will be written
 	call read_string				   ;reads the name and saves in .name of the current position
+	
+	mov al, byte[client_array+register.name]
+	;add al, 48
+	call print_char
+	call print_enter
+   
+   ;push si
+   ;lea si, [client_array+register.name]
+   ;call print_string
+   ;call print_enter
+   ;pop si
     
-    push si
-    mov si, cpf_str                   
+    push si										;salva si na pilha
+    mov si, cpf_str           			;printa "cpf:..."
     call print_string
-    pop si	
+    pop si										;retoma endereço de si
 
     mov di, [si + register.CPF]        ;points di to the position in which the CPF will be written
     call read_string                   ;reads the CPF and stores in .name of the current position
@@ -132,10 +181,10 @@ register_account:
     mov di, [si + register.account]	   ;points di to the position in which the account will be written
 	call read_string				   ;reads the account and saves in .name of the current position
 	
-	lea si, [client_array+ register.name]
-	call print_string
-	lea si, [agency_str]
-	call print_string
+	mov si, client_array
+	mov al, [si+register.validity]
+	add al, 48
+	call print_char
 ret
  
 ;=======================================/*buscando uma conta:*/:
@@ -159,7 +208,7 @@ find_account:
         cmp ax, [si + register.account];x == v[i]?
         je salvaEndereco               ;se sim, sai do loop
 
-        add si, [client_size]          ;se não, i++
+        add si, [register.size]          ;se não, i++
         loop compara
 
     mov si, [si + register.account] 
@@ -231,7 +280,7 @@ ret
         
     notbusca:					;caso nao precise printar
     
-        add di, word[client_size];avança para a proxima(si+28)
+        add di, word[register.size];avança para a proxima(si+28)
         loop ag_busca
     
     ret
@@ -259,7 +308,7 @@ list_accounts:
         xchg cx,bx
         
     not_acc:
-        add di, word[client_size]	;avança para a proxima(si+28)
+        add di, word[register.size]	;avança para a proxima(si+28)
     loop account_show
 ret    
 ;========================================:
@@ -270,22 +319,11 @@ read_string:
 	cmp al, 13	;
 	je .read
 
-	mov ah, 0xe ; /*exibe o que esta sendo escrito na leitura*/
-	mov bl, 2
-	int 10h
+	call print_char ; /*exibe o que esta sendo escrito na leitura*/
 
 	jmp read_string
 	.read:
-	mov al, 13
-    mov ah, 0xe
-    mov bh, 0
-    mov bl, 2
-    int 10h
-    mov al, 10
-    mov ah, 0xe                    
-    mov bl,2
-    mov bh,0
-    int 10h 
+	call print_enter
 ret	
 ;========================================:
 print_string:
@@ -293,9 +331,7 @@ print_string:
 	cmp al,0       ;0 é o código do \0
 	je .printed
 
-	mov ah, 0xe    ;Código da instrução de imprimir um caractere que está em al
-	mov bl, 14      ;Cor do caractere em modos de vídeo gráficos (vermelho)
-	int 10h        ;Interrupção de vídeo. 
+	call print_char
 
 	jmp print_string
 	.printed:
@@ -309,27 +345,33 @@ ret
 
 ;========================================:
 searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
-	lea si, [client_array]	;seleciona o bit de validade da struc 
+	lea si, [client_array]	;recebe a posicao inicial do array struc
     												;deslocando o tamanho ate validade
-   mov cx, word[array_size]								;move para cx o numero de elementos no vetor
+   mov cx, array_size								;move para cx o numero de elementos no vetor
    .search_account:
-   	lea bx, [si + register.validity]		;coloca o que esta armazenado em si+.validade
-   												; em bx para comparar
+   	lea bx, [si+register.validity]		;coloca o que esta armazenado em si+.validade
+   																		; em bx para comparar
    	cmp word[bx], 1						;caso a posicao esteja ocupada, avanca para prox posicao
    	je .invalida        					;caso não seja uma posicao valida
    	mov byte[si + register.validity], 1     ;movo o numero da conta para ax
    	ret  										;retorna apos preencher a posicao valida
    .invalida:
-   	add si, word[client_size]					;avança para a proxima(si+28)
+   	add si, word[register.size]					;avança para a proxima(si+40)
    loop .search_account						;se sair desse loop, nao encontrou espaco
 ret
 ;========================================:
-
 print_char:
 	mov ah, 0xe                    ;code of the instruction to print a char which is in al
    mov bl,0xf
    mov bh,0
 	int 10h        
+ret
+;========================================:
+print_enter:	
+	mov al, 13	;chama um enter para descer a tela
+	call print_char
+   mov al, 10
+   call print_char
 ret
 
 end:
