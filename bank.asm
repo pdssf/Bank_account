@@ -1,7 +1,6 @@
-org 0x7c00
+org 0x7e00
 jmp 0x0000:start
 
-string times 50 db 0; variavel com 50 espaços de memoria
 
 STRUC register
     .name resb 21
@@ -15,12 +14,13 @@ ENDSTRUC
 SEGMENT .data                                   
 
 ;Variable declaration field
+string db 'original:',  0; variavel com 50 espaços de memoria
 menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13,10, 13,0
-name_str db 10,13,'Name:  ',0
 cpf_str db 10, 13,'CPF:  ',0
 agency_str db 10, 13, 'Agency:  ',0
 account_str db 10, 13, 'Account:  ',0
-check times 20 db 'Debug:', 0
+check db 'Debug:', 0
+name_str db 10,13,'Name:  ',0
 array_size db 10
 
 client: ISTRUC register                ;declarando variavel do tipo register
@@ -58,10 +58,12 @@ menu:
 
     mov si, menu_str
     print_menu:
-    	lodsb                          ;loads a byte from DS:SI into AL and then increments SI  
+    	;lodsb            ;loads a byte from DS:SI into AL and then increments SI  
+    	mov al, byte[si]
+    	inc si
+    	   	
     	mov ah, 0xe                    ;code of the instruction to print a char which is in al
     	mov bl,0xf
-    	mov bh,0
 		int 10h                        ;video interruption 
 		
     cmp  al, 0                     ;checks if it didn't reach the end of the string
@@ -119,16 +121,15 @@ register_account:
 	mov ah, 0 	;
 	int 16h 		;  /*AL <- caracter*/
 					
-	stosb 		;	/* tirar de AL->DI*/	
+	;stosb 		;	/* tirar de AL->DI*/	
+	mov [di], al
+	inc di
 	
 	cmp al, 13	;
 	je fim
 
-	;call print_char ; /*exibe o que esta sendo escrito na leitura*/
-	mov ah, 0xe
-	mov bl, 2
-	int 10h
-		
+	call print_char ; /*exibe o que esta sendo escrito na leitura*/
+			
 	jmp debugando
 	fim:
 	
@@ -152,9 +153,7 @@ register_account:
 		
 		convertido:
 		
-		mov ah, 0xe    ;Código da instrução de imprimir um caractere que está em al
-		mov bl, 2      ;Cor do caractere em modos de vídeo gráficos (verde)
-		int 10h        ;Interrupção de vídeo. 
+		call print_char
 
 	jmp printf
 	done:
@@ -182,11 +181,11 @@ register_account:
 	call print_char
 	call print_enter
    
-   ;push si
-   ;lea si, [client_array+register.name]
-   ;call print_string
-   ;call print_enter
-   ;pop si
+   push si
+   lea si, [client_array+register.name]
+   call print_string
+   call print_enter
+   pop si
     
     push si										;salva si na pilha
     mov si, cpf_str           			;printa "cpf:..."
@@ -346,7 +345,9 @@ ret
 read_string:	
 	mov ah, 0 	;
 	int 16h 		;  /*AL <- caracter*/				
-	stosb 		;	/* tirar de AL->DI*/	
+	;stosb 		;	/* tirar de AL->DI*/	
+	mov [di], al
+	inc di
 	cmp al, 13	;
 	je .read
 
@@ -358,7 +359,9 @@ read_string:
 ret	
 ;========================================:
 print_string:
-	lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 		
+	;lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 	
+	mov al, byte[si]
+	inc si	
 	cmp al,0       ;0 é o código do \0
 	je .printed
 
@@ -394,8 +397,7 @@ ret
 print_char:
 	mov ah, 0xe  ;code of the instruction to print a char which is in al
    mov bl, 0xf
-   mov bh,0
-	int 10h        
+	int 10h   
 ret
 ;========================================:
 print_enter:	
