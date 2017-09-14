@@ -1,7 +1,7 @@
-org 0x7E00
+org 0x7c00
 jmp 0x0000:start
 
-nova_string times 20 db 0
+string times 50 db 0; variavel com 50 espaços de memoria
 
 STRUC register
     .name resb 21
@@ -112,28 +112,59 @@ register_account:
 	call print_string			      ;prints "Debug:"
 	pop si
 	
-	mov DI, nova_string
-	;call read_string
+	xor ax, ax
+	mov ds, ax
+	mov di, string
 	debugando:
 	mov ah, 0 	;
-	int 16h 		;  /*AL <- caracter*/				
+	int 16h 		;  /*AL <- caracter*/
+					
 	stosb 		;	/* tirar de AL->DI*/	
+	
 	cmp al, 13	;
 	je fim
 
 	;call print_char ; /*exibe o que esta sendo escrito na leitura*/
 	mov ah, 0xe
-		mov bl, 2
-		int 10h
+	mov bl, 2
+	int 10h
 		
 	jmp debugando
 	fim:
 	
 	call print_enter
-	
-	mov si, nova_string
-	call print_string
-	call print_enter
+	mov SI,string
+	printf:
+		lodsb     ;Carrega um byte de DS:SI em AL e depois incrementa SI 
+		
+		cmp al,0                       ;0 é o código do \0
+		je done
+		
+		cmp al,ch
+		JAE trateMin
+		
+			add al,32;/*adiciona 32 de AL para converte-lo pra maiuscula*/
+			jmp convertido
+			
+		trateMin:
+			sub al,32;/*subtrai 32 de AL para converte-lo pra minuscula*/
+			
+		
+		convertido:
+		
+		mov ah, 0xe    ;Código da instrução de imprimir um caractere que está em al
+		mov bl, 2      ;Cor do caractere em modos de vídeo gráficos (verde)
+		int 10h        ;Interrupção de vídeo. 
+
+	jmp printf
+	done:
+	;push si
+	;mov si, check
+	;call print_string 			;prints input
+	;mov si, nova_string
+	;call print_string 			;prints input
+	;call print_enter
+	;pop si
 	
 	push si
 	mov si, name_str		            
@@ -361,8 +392,8 @@ searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:reg
 ret
 ;========================================:
 print_char:
-	mov ah, 0xe                    ;code of the instruction to print a char which is in al
-   mov bl,0xf
+	mov ah, 0xe  ;code of the instruction to print a char which is in al
+   mov bl, 0xf
    mov bh,0
 	int 10h        
 ret
@@ -375,3 +406,7 @@ print_enter:
 ret
 
 end:
+jmp $
+times 510-($-$$) db 0		; preenche o resto do setor com zeros 
+dw 0xaa55					; coloca a assinatura de boot no final
+							; do setor (x86 : little endian)
