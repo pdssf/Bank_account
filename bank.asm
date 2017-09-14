@@ -110,62 +110,6 @@ register_account:
 	call print_enter
 	
 	push si
-	mov si, check		            
-	call print_string			      ;prints "Debug:"
-	pop si
-	
-	xor ax, ax
-	mov ds, ax
-	mov di, string
-	debugando:
-	mov ah, 0 	;
-	int 16h 		;  /*AL <- caracter*/
-					
-	;stosb 		;	/* tirar de AL->DI*/	
-	mov [di], al
-	inc di
-	
-	cmp al, 13	;
-	je fim
-
-	call print_char ; /*exibe o que esta sendo escrito na leitura*/
-			
-	jmp debugando
-	fim:
-	
-	call print_enter
-	mov SI,string
-	printf:
-		lodsb     ;Carrega um byte de DS:SI em AL e depois incrementa SI 
-		
-		cmp al,0                       ;0 é o código do \0
-		je done
-		
-		cmp al,ch
-		JAE trateMin
-		
-			add al,32;/*adiciona 32 de AL para converte-lo pra maiuscula*/
-			jmp convertido
-			
-		trateMin:
-			sub al,32;/*subtrai 32 de AL para converte-lo pra minuscula*/
-			
-		
-		convertido:
-		
-		call print_char
-
-	jmp printf
-	done:
-	;push si
-	;mov si, check
-	;call print_string 			;prints input
-	;mov si, nova_string
-	;call print_string 			;prints input
-	;call print_enter
-	;pop si
-	
-	push si
 	mov si, name_str		            
 	call print_string			      ;prints "Name:"
 	pop si
@@ -173,44 +117,58 @@ register_account:
 	call searches      			   ;searchs for an empty slot in the structure
 	;cmp si, vec_size				   ;compares si with vec_size
 	;je .returns					   ;returns in case there's no such slot
-	lea di, [client_array+register.name]					   ;points di to the position in wich the name will be written
-	call read_string				   ;reads the name and saves in .name of the current position
 	
-	mov al, byte[client_array+register.name]
-	;add al, 48
-	call print_char
-	call print_enter
+	lea di, [si+register.name]					   ;points di to the position in wich the name will be written
+	call read_string				   ;reads the name and saves in .name of the current position
    
    push si
-   lea si, [client_array+register.name]
+   lea si, [si+register.name]
    call print_string
    call print_enter
    pop si
     
-    push si										;salva si na pilha
-    mov si, cpf_str           			;printa "cpf:..."
-    call print_string
-    pop si										;retoma endereço de si
+   push si										;salva si na pilha
+   mov si, cpf_str           			;printa "cpf:..."
+   call print_string
+   pop si										;retoma endereço de si
 
-    mov di, [si + register.CPF]        ;points di to the position in which the CPF will be written
-    call read_string                   ;reads the CPF and stores in .name of the current position
+   mov di, [client_array + register.CPF]        ;points di to the position in which the CPF will be written
+   call read_string                   ;reads the CPF and stores in .name of the current position
 	
-    push si
-    mov si, agency_str                   
-    call print_string
-    pop si
+	push si
+   lea si, [client_array+register.CPF]
+   call print_string
+   call print_enter
+   pop si
+   
+   push si
+   mov si, agency_str                   
+   call print_string
+   pop si
 
-    mov di, [si + register.agency]	   ;points di to the position in which the agency will be written
+   mov di, [client_array + register.agency]	   ;points di to the position in which the agency will be written
 	call read_string				   ;reads the agency and saves in .name of the current position
 
-    push si
-    mov si, account_str                   
-    call print_string	
-    pop si
+	push si
+   lea si, [client_array+register.agency]
+   call print_string
+   call print_enter
+   pop si
+   
+   push si
+   mov si, account_str                   
+   call print_string	
+   pop si
 
-    mov di, [si + register.account]	   ;points di to the position in which the account will be written
+   mov di, [client_array + register.account]	   ;points di to the position in which the account will be written
 	call read_string				   ;reads the account and saves in .name of the current position
 	
+	push si
+   lea si, [client_array+register.account]
+   call print_string
+   call print_enter
+   pop si
+   
 	mov si, client_array
 	mov al, [si+register.validity]
 	add al, 48
