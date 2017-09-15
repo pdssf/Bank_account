@@ -54,22 +54,10 @@ start:
    mov bl, 1
    int 10h
 	
-menu:
 
-    mov si, menu_str
-    print_menu:
-    	;lodsb            ;loads a byte from DS:SI into AL and then increments SI  
-    	mov al, byte[si]
-    	inc si
-    	   	
-    	mov ah, 0xe                    ;code of the instruction to print a char which is in al
-    	mov bl,0xf
-		int 10h                        ;video interruption 
-		
-    cmp  al, 0                     ;checks if it didn't reach the end of the string
-    jne print_menu
-
-done_menu:
+	menu:
+	mov si, menu_str
+	call print_string
 	
     mov ah, 0
     int 16h
@@ -103,22 +91,24 @@ jmp menu
 ;======================================= Registers a new account:
 register_account:
 
+	;checks validity
 	mov si, client_array
 	mov al, [si+register.validity]
 	add al, 48
 	call print_char
 	call print_enter
 	
+	;prints "Name:\n"
 	push si
 	mov si, name_str		            
-	call print_string			      ;prints "Name:"
+	call print_string
 	pop si
 	
 	call searches      			   ;searchs for an empty slot in the structure
 	;cmp si, vec_size				   ;compares si with vec_size
 	;je .returns					   ;returns in case there's no such slot
 	
-	lea di, [si+register.name]					   ;points di to the position in wich the name will be written
+	lea di, [si+register.name]		;points di to the position in wich the name will be written
 	call read_string				   ;reads the name and saves in .name of the current position
    
    push si
@@ -126,31 +116,38 @@ register_account:
    call print_string
    call print_enter
    pop si
-    
-   push si										;salva si na pilha
-   mov si, cpf_str           			;printa "cpf:..."
+   
+	mov al, [si+register.validity]
+	add al, 48
+	call print_char
+	call print_enter
+	
+   ;prints "cpf:"
+   push si
+   mov si, cpf_str           			
    call print_string
-   pop si										;retoma endereço de si
+   pop si
 
-   mov di, [client_array + register.CPF]        ;points di to the position in which the CPF will be written
-   call read_string                   ;reads the CPF and stores in .name of the current position
+   lea di, [si+register.CPF] ;points di to the position to write CPF
+   call read_string            ;reads the CPF and stores in .name of the current position
 	
 	push si
-   lea si, [client_array+register.CPF]
+   lea si, [si+register.CPF]
    call print_string
    call print_enter
    pop si
    
+   ;prints "Agency:"
    push si
    mov si, agency_str                   
    call print_string
    pop si
 
-   mov di, [client_array + register.agency]	   ;points di to the position in which the agency will be written
+   lea di, [si+register.agency]	;points di to the position to write agency
 	call read_string				   ;reads the agency and saves in .name of the current position
 
 	push si
-   lea si, [client_array+register.agency]
+   lea si, [si+register.agency]
    call print_string
    call print_enter
    pop si
@@ -160,11 +157,11 @@ register_account:
    call print_string	
    pop si
 
-   mov di, [client_array + register.account]	   ;points di to the position in which the account will be written
+   lea di, [si+register.account]	;points di to the position to write account
 	call read_string				   ;reads the account and saves in .name of the current position
 	
 	push si
-   lea si, [client_array+register.account]
+   lea si, [si+register.account]
    call print_string
    call print_enter
    pop si
