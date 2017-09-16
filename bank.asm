@@ -60,35 +60,40 @@ start:
 	mov si, menu_str
 	call print_string
 	
-    mov ah, 0
-    int 16h
-    sub al, '0'
+	;/*Reads input char*/
+	call read_char	
     
-    cmp al, 1                           ;1 - Register New Account
-    jne not_1
-    	call register_account
-    jmp menu
-    
-    not_1:	
-    cmp al, 2                           ;2 - Query Account
-        
-    cmp al, 3                           ;3 - Edit Account
-    
-    cmp al, 4                           ;4 - Delete Account
-    
-    cmp al, 5                           ;5 - List Agencies
-    jne not_5
-    	call list_agencies
-    jmp menu
-    not_5:
-    
-    cmp al, 6                           ;6 - List Accounts
-    jne not_6
-    	call list_accounts
-    jmp menu
-    not_6:
+	cmp al, '1'					;1 - Register New Account
+	jne not_1
+		call register_account
+		jmp menu    
+	not_1:	
+	cmp al, '2'					;2 - Find account
+	jne not_2
+		call find_account
+		jmp menu
+   not_2:
+   cmp al, '3'					;3 - Edit Account
+   jne not_3
+   	call edit_account
+   	jmp menu
+	not_3:    
+   cmp al, '4'					;4 - Delete Account
+   jne not_4
+      call delete_account
+      jmp menu
+   not_4: 
+   cmp al, '5'					;5 - List Agencies
+   jne not_5
+   	call list_agencies
+   	jmp menu
+   not_5:    
+   cmp al, 6               ;6 - List Accounts
+   jne not_6
+   	call list_accounts
+   	jmp menu
+   not_6:
 jmp menu
-
 ;======================================= Registers a new account:
 register_account:
 
@@ -99,7 +104,7 @@ register_account:
 	call print_char
 	call print_enter
 	
-	call searches      ;searchs for an empty slot in the structure
+	call searches_validity      ;searchs for an empty slot in the structure
 	;cmp si, array_size	 ;compares si with vec_size
 	cmp dx, 1
 	je menu		 ;returns in case there's no such slot
@@ -181,101 +186,92 @@ ret
  
 ;=======================================/*buscando uma conta:*/:
 find_account:
-    lea si, [client_array]             ;vai para a primeira posição do vetor de contas
+    call busca                   ;call query procedure
+    cmp si, 0                      ;if procedure return si = 0 there's no account with that number
+    je .notFound                   ;so jump to .notFound label
 
-    push si
-    push ax
-    push bp
-    push cx 	                       ;salva o valor original dos registradores a serem usados pelo call
-
-    mov bp, sp 	                       ;copia sp em bp para ficar mais facil de trabalhar
-    add bp, 10                         ;adicionando 10 a dp é possivel ter acesso
-    				                   ;ao endereço dos parametros a serem usados pelo call
-    mov ax, [bp] 			           ;carrega o numero a ser buscado (x)
-    mov si, [bp + 2] 	               ;carrega o endereço onde deve ser iniciado a busca (assume-se que v[0])
-
-    mov cx, [array_size] 			   ;tamanho do vetor pra ser usado na pilha
-
-    compara: 
-        cmp ax, [si + register.account];x == v[i]?
-        je salvaEndereco               ;se sim, sai do loop
-
-        add si, [register.size]          ;se não, i++
-        loop compara
-
-    mov si, [si + register.account] 
-    call print_string 	               ;caso a conta buscada não exista, informa ao usuario e
-    mov word[bp + 2], -1 	           ;salva -1 na posição da pilha onde originalmente estava v[0]
-    jmp fimBusca
-
-    salvaEndereco:
-        mov [bp + 2], si               ;salva v[i] na posição da pilha onde antes existia v[0]
-
-    fimBusca:
-        pop cx ;
-        pop bp
-        pop ax
-        pop si                         ;restaura os valores originais dos registradores usados no call
-        ret 2                          ;retorna incrementando sp em 2 para sobrescrever o local onde estava o parametro x
-ret
-;========================================deletando uma conta:
-
-    deleta:
-    ;push si 
-    ;push ax
-    ;push bp                           ;salva o valor original dos registradores a serem usados pelo call
-    ;mov bp, sp                        ;copia sp em bp para ficar mais facil de trabalhar
-    ;add bp, 8 	                       ;adicionando 8 a dp é possivel ter acesso ao endereco
-    				                   ;dos parametros a serem usados pelo call
-    ;mov ax, [bp]                      ;carrega o numero da conta a ser deletado
-    ;mov si, [bp + 2]                  ;carrega o endereco da posicao inicial do vetor de clientes
-
-    ;push si 
-    ;push ax                           ;salva o numero da conta e o endereco de v[0] pra ser usado no procedimento busca
-    ;call busca
-
-    ;pop si
-    ;cmp si, -1 
-    ;jne fimDeleta                     ;se busca retornar -1, ou seja, a conta não existe pula pro final
-
-    ;mov word[si + register.validity], 0 ;caso contrario sobrescreve o bit validade 
-    								   ;"apagando" a conta
-
-    ;fimDeleta:
-        ;pop bp ;
-        ;pop ax
-        ;pop si                        ;restaura os valores originais do registrador
-        ;ret 4                         ;retorna sobrescrevendo os paramentros contidos na pilha
-
-;========================================listar agencias:
-    list_agencies:
-    
-    lea di, [client_array]	;move primeira conta para si: deslocando o tamanho ate agencia
-    mov cx, 10				;move para cx o numero de elementos no vetor
-
-    ag_busca:
-        lea bx, [di + register.validity]     ;carrega o bit de validade em bx
-        cmp byte[bx],0		;verifica se esta livre
-        je notbusca        ;caso não seja uma posicao valida
-
-        mov si,[di + register.agency]        ;movo o numero da agencia para si
-				mov dx, 6        
-        xchg dx,cx
-        ag_prt:
-       		  lodsb          
-            mov ah, 0xe    
-            mov bl, 2      
-            int 10h                    
-       loop ag_prt
-       
-        xchg cx,dx
+   mov bl, 2                 
+   mov cx, si
         
-    notbusca:					;caso nao precise printar
-    
-        add di, word[register.size];avança para a proxima(si+28)
-        loop ag_busca
-    
+    lea si, [name_str]
+    call print_string
+    xchg cx, si
+    add si, register.name
+    call print_string            ;Print the name
+    mov ah, 0xe
+    mov al, 0xa
+    int 10h
+    mov al, 0xd
+    int 10h
+
+    lea si, [cpf_str]
+    call print_string
+    xchg cx, si
+    add si, register.CPF
+    call print_string          ;CPF
+    mov ah, 0xe
+    mov al, 0xa
+    int 10h
+    mov al, 0xd
+    int 10h
+
+    lea si, [agency_str]
+    call print_string
+    xchg cx, si
+    add si, register.agency
+    call print_string          ;and agency of the account 
+    mov ah, 0xe
+    mov al, 0xa
+    int 10h
+    mov al, 0xd
+    int 10h
+
+       ret
+
+    .notFound:               ;print account not found and return
+        lea si, [error_str]
+        call print_string
+        ret
+;========================================deletando uma conta:
+delete_account:
+    call busca
+    cmp si, 0
+    je .naoEncontrada
+
+    mov byte[si + register.validity], 0
     ret
+
+    .naoEncontrada:
+        lea si, [error_str]
+        call print_string
+ret
+;========================================listar agencias:
+list_agencies:
+    
+	lea di, [client_array]	;move primeira conta para si: deslocando o tamanho ate agencia
+	mov cx, 10				;move para cx o numero de elementos no vetor
+
+	ag_busca:
+		lea bx, [di + register.validity]     ;carrega o bit de validade em bx
+      cmp byte[bx],0		;verifica se esta livre
+      je notbusca        ;caso não seja uma posicao valida
+
+      mov si,[di + register.agency]        ;movo o numero da agencia para si
+		mov dx, 6        
+      xchg dx,cx
+      ag_prt:
+      	lodsb          
+         mov ah, 0xe    
+         mov bl, 2      
+         int 10h                    
+      loop ag_prt
+       
+      xchg cx,dx
+        
+notbusca:					;caso nao precise printar
+	add di, word[register.size];avança para a proxima(si+28)
+	loop ag_busca
+ret
 ;========================================listar contas:
 
 list_accounts:
@@ -340,7 +336,7 @@ miscmp:
 ret
 
 ;========================================:
-searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
+searches_validity: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
 	lea si, [client_array]	;recebe a posicao inicial do array struc
 	mov dx, 0
    mov cx, 10								;move para cx o numero de elementos no vetor
@@ -354,32 +350,82 @@ searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:reg
    .invalida:
    	add si, word[register.size]					;avança para a proxima(si+40)
    	
-   	;/*this section shows the si position (p:)*/
-   	push bx
-   	mov al, 'p'
-   	call print_char
-   	mov al, ':'
-   	call print_char
-   	mov al, byte[si]
-   	add al, 48
-   	call print_char
-   	call print_enter
-   	mov al, cl
-   	add al, 48
-   	call print_char
-   	call print_enter
-   	pop bx
-   	
    loop .search_account						;se sair desse loop, nao encontrou espaco
    mov si, full_str
    call print_string
    mov dx, 1
 ret
 ;========================================:
+searches_string:
+    lea si, [account_str]
+    call print_string
+
+    lea di, [account_n]              
+    call read_string                     ;get the account with the user
+    mov byte[di+1], 0
+
+    lea si, [client_array + register.account]
+    mov di, [account_n]
+
+    mov cx, [array_size]
+    .compara:                         ;while(cmp_str!=1 && CX>=0)
+        push si
+        push di
+        call cmp_str                  ;call procedure to compare the strings 
+
+        pop ax
+        cmp ax, 1                     ;if they are equal it'll return 1
+        je .encontrada                ;so get out the loop
+
+        add si, word[client_size]             ;else, do i = i + sSize and keep the loop
+        loop .compara                 
+
+        mov si, 0
+        ret
+
+    .encontrada:
+        sub si, [register.account]                ;si = si - cliente.conta to get the adress of aCliente[i]
+        ret
+;========================================:
+cmp_str:
+    push si                        ;save registers on the stack
+    push di
+    push cx
+    push bp
+
+    mov bp, sp
+    add bp, 10
+
+    mov di, [bp]                   ;get the strings to compare from the stack
+    mov si, [bp + 2]
+
+    mov cx, 6
+    repe cmpsb                     ;compare them
+    jz .ret_e                      
+
+    mov word[bp +2], 0                ;if(string1 != string2) return 0
+    jmp .end
+
+    .ret_e:
+        mov word[bp + 2], 1           ;else return 1
+
+    .end:
+        pop bp
+        pop cx
+        pop di
+        pop si                    ;unstack the registers
+
+        ret 2                     ;return
+;========================================
 print_char:
 	mov ah, 0xe  ;code of the instruction to print a char which is in al
    mov bl, 0xf
 	int 10h   
+ret
+;========================================:
+read_char:	
+	mov ah, 0
+   int 16h
 ret
 ;========================================:
 print_enter:	
