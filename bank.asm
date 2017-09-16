@@ -21,10 +21,11 @@ agency_str db 10, 13, 'Agency:  ',0
 account_str db 10, 13, 'Account:  ',0
 check db 'Debug:', 0
 name_str db 10,13,'Name:  ',0
-array_size db 10
+full_str db 'Nao ha mais espaco. Delete uma conta antes de cadastrar outra.', 10, 13, 0
+array_size db 3
 
-client: ISTRUC register                ;declarando variavel do tipo register
-    AT register.name, DB 'Paulo',0             
+client: ISTRUC register                ;declaring struc register variable type
+    AT register.name, DB 0             
     AT register.CPF, DB 0              ;CPF is the Brazillian equivalent to the American Social Security Number
     AT register.agency, DB 0
     AT register.account, DB 0
@@ -98,29 +99,27 @@ register_account:
 	call print_char
 	call print_enter
 	
-	;prints "Name:\n"
+	call searches      ;searchs for an empty slot in the structure
+	;cmp si, array_size	 ;compares si with vec_size
+	cmp dx, 1
+	je menu		 ;returns in case there's no such slot
+	
+	;prints "Name:"
 	push si
 	mov si, name_str		            
 	call print_string
 	pop si
 	
-	call searches      			   ;searchs for an empty slot in the structure
-	;cmp si, vec_size				   ;compares si with vec_size
-	;je .returns					   ;returns in case there's no such slot
-	
+	;reads the name
 	lea di, [si+register.name]		;points di to the position in wich the name will be written
 	call read_string				   ;reads the name and saves in .name of the current position
    
+   ;prints the name
    push si
    lea si, [si+register.name]
    call print_string
    call print_enter
    pop si
-   
-	mov al, [si+register.validity]
-	add al, 48
-	call print_char
-	call print_enter
 	
    ;prints "cpf:"
    push si
@@ -128,9 +127,11 @@ register_account:
    call print_string
    pop si
 
+	;reads the CPF
    lea di, [si+register.CPF] ;points di to the position to write CPF
    call read_string            ;reads the CPF and stores in .name of the current position
 	
+	;prints the CPF
 	push si
    lea si, [si+register.CPF]
    call print_string
@@ -143,29 +144,35 @@ register_account:
    call print_string
    pop si
 
+	;reads the agency
    lea di, [si+register.agency]	;points di to the position to write agency
 	call read_string				   ;reads the agency and saves in .name of the current position
 
+	;prints the agency
 	push si
    lea si, [si+register.agency]
    call print_string
    call print_enter
    pop si
    
+   ;prints "Account:"
    push si
    mov si, account_str                   
    call print_string	
    pop si
 
+	;reads the account
    lea di, [si+register.account]	;points di to the position to write account
 	call read_string				   ;reads the account and saves in .name of the current position
 	
+	;prints the account
 	push si
    lea si, [si+register.account]
    call print_string
    call print_enter
    pop si
    
+   ;prints validity number
 	mov si, client_array
 	mov al, [si+register.validity]
 	add al, 48
@@ -335,8 +342,8 @@ ret
 ;========================================:
 searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
 	lea si, [client_array]	;recebe a posicao inicial do array struc
-    												;deslocando o tamanho ate validade
-   mov cx, array_size								;move para cx o numero de elementos no vetor
+	mov dx, 0
+   mov cx, 10								;move para cx o numero de elementos no vetor
    .search_account:
    	lea bx, [si+register.validity]		;coloca o que esta armazenado em si+.validade
    																		; em bx para comparar
@@ -346,7 +353,27 @@ searches: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:reg
    	ret  										;retorna apos preencher a posicao valida
    .invalida:
    	add si, word[register.size]					;avança para a proxima(si+40)
+   	
+   	;/*this section shows the si position (p:)*/
+   	push bx
+   	mov al, 'p'
+   	call print_char
+   	mov al, ':'
+   	call print_char
+   	mov al, byte[si]
+   	add al, 48
+   	call print_char
+   	call print_enter
+   	mov al, cl
+   	add al, 48
+   	call print_char
+   	call print_enter
+   	pop bx
+   	
    loop .search_account						;se sair desse loop, nao encontrou espaco
+   mov si, full_str
+   call print_string
+   mov dx, 1
 ret
 ;========================================:
 print_char:
