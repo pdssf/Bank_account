@@ -22,7 +22,9 @@ account_str db 10, 13, 'Account:  ',0
 check db 'Debug:', 0
 name_str db 10,13,'Name:  ',0
 full_str db 'Nao ha mais espaco. Delete uma conta antes de cadastrar outra.', 10, 13, 0
-array_size db 3
+array_size db 10
+input_string times 6 db 0
+searching db 'Searching...', 10, 13, 0
 
 client: ISTRUC register                ;declaring struc register variable type
     AT register.name, DB 0             
@@ -53,8 +55,7 @@ start:
    mov ah, 0xb
    mov bh, 0
    mov bl, 1
-   int 10h
-	
+   int 10h	
 
 	menu:
 	mov si, menu_str
@@ -186,52 +187,51 @@ ret
  
 ;=======================================/*buscando uma conta:*/:
 find_account:
-    call busca                   ;call query procedure
-    cmp si, 0                      ;if procedure return si = 0 there's no account with that number
-    je .notFound                   ;so jump to .notFound label
+	call searches_string   ;call query procedure
+	cmp si, 0              ;if procedure return si = 0 there's no account with that number
+	je .notFound           ;so jump to .notFound label
 
-   mov bl, 2                 
+	mov bl, 2                 
    mov cx, si
         
-    lea si, [name_str]
-    call print_string
-    xchg cx, si
-    add si, register.name
-    call print_string            ;Print the name
-    mov ah, 0xe
-    mov al, 0xa
-    int 10h
-    mov al, 0xd
-    int 10h
+	lea si, [name_str]
+	call print_string
+	xchg cx, si
+	add si, register.name
+	call print_string      ;Print the name
+	mov ah, 0xe
+	mov al, 0xa
+	int 10h
+	mov al, 0xd
+	int 10h
 
-    lea si, [cpf_str]
-    call print_string
-    xchg cx, si
-    add si, register.CPF
-    call print_string          ;CPF
-    mov ah, 0xe
-    mov al, 0xa
-    int 10h
-    mov al, 0xd
-    int 10h
+	lea si, [cpf_str]
+	call print_string
+	xchg cx, si
+	add si, register.CPF
+	call print_string          ;CPF
+	mov ah, 0xe
+	mov al, 0xa
+	int 10h
+	mov al, 0xd
+	int 10h
 
-    lea si, [agency_str]
-    call print_string
-    xchg cx, si
-    add si, register.agency
-    call print_string          ;and agency of the account 
-    mov ah, 0xe
-    mov al, 0xa
-    int 10h
-    mov al, 0xd
-    int 10h
+	lea si, [agency_str]
+	call print_string
+	xchg cx, si
+	add si, register.agency
+	call print_string          ;and agency of the account 
+	mov ah, 0xe
+	mov al, 0xa
+	int 10h
+	mov al, 0xd
+	int 10h
+ret
 
-       ret
-
-    .notFound:               ;print account not found and return
-        lea si, [error_str]
-        call print_string
-        ret
+.notFound:               ;print account not found and return
+	lea si, [error_str]
+	call print_string
+ret
 ;========================================deletando uma conta:
 delete_account:
     call busca
@@ -273,7 +273,6 @@ notbusca:					;caso nao precise printar
 	loop ag_busca
 ret
 ;========================================listar contas:
-
 list_accounts:
     lea di, [client_array]	;move primeira conta para dx: 
                                             ;deslocando o tamanho ate conta
@@ -328,27 +327,26 @@ print_string:
 	jmp print_string
 	.printed:
 ret
-
+;========================================:
 miscmp:
 	;/*compara 2 strings em ES:DI e DS:SI não esquecer de setar cx com o tamanho das strings*/
 	repe cmpsb			;/*repete enquanto cx!=0 e ZF==1*/
 	;/*retorna, e deve ser verificado o conteudo de CX*/
 ret
-
 ;========================================:
 searches_validity: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
-	lea si, [client_array]	;recebe a posicao inicial do array struc
+	lea si, [client_array]					;recebe a posicao inicial do array struc
 	mov dx, 0
-   mov cx, 10								;move para cx o numero de elementos no vetor
+   mov cx, 10									;move para cx o numero de elementos no vetor
    .search_account:
-   	lea bx, [si+register.validity]		;coloca o que esta armazenado em si+.validade
-   																		; em bx para comparar
+   	lea bx, [si+register.validity]	;coloca o que esta armazenado em si+.validade
+   												; em bx para comparar
    	cmp word[bx], 1						;caso a posicao esteja ocupada, avanca para prox posicao
    	je .invalida        					;caso não seja uma posicao valida
-   	mov byte[si + register.validity], 1     ;movo o numero da conta para ax
+   	mov byte[si+register.validity],1 ;movo o numero da conta para ax
    	ret  										;retorna apos preencher a posicao valida
    .invalida:
-   	add si, word[register.size]					;avança para a proxima(si+40)
+   	add si, word[register.size]		;avança para a proxima(si+40)
    	
    loop .search_account						;se sair desse loop, nao encontrou espaco
    mov si, full_str
@@ -357,15 +355,15 @@ searches_validity: ; /*essa funcao procura uma posicao vazia para fazer operacoe
 ret
 ;========================================:
 searches_string:
-    lea si, [account_str]
+    lea si, searching
     call print_string
 
-    lea di, [account_n]              
+    lea di, [input_string]              
     call read_string                     ;get the account with the user
     mov byte[di+1], 0
 
     lea si, [client_array + register.account]
-    mov di, [account_n]
+    mov di, [input_string]
 
     mov cx, [array_size]
     .compara:                         ;while(cmp_str!=1 && CX>=0)
@@ -415,7 +413,7 @@ cmp_str:
         pop di
         pop si                    ;unstack the registers
 
-        ret 2                     ;return
+ret 2                     ;return
 ;========================================
 print_char:
 	mov ah, 0xe  ;code of the instruction to print a char which is in al
