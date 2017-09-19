@@ -87,12 +87,12 @@ start:
    not_4: 
    cmp al, '5'					;5 - List Agencies
    jne not_5
-   	call list_agencies
-   	jmp menu
+        call list_agencies
+        jmp menu
    not_5:    
-   cmp al, 6               ;6 - List Accounts
-   jne not_6
-   	call list_accounts
+   cmp al, '6'               ;6 - List Accounts
+    jne not_6
+        call list_accounts
    	jmp menu
    not_6:
 jmp menu
