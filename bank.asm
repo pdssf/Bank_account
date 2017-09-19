@@ -247,22 +247,12 @@ list_agencies:
 	mov cx, 10				;move para cx o numero de elementos no vetor
 
 	ag_busca:
-		lea bx, [di + register.validity]     ;carrega o bit de validade em bx
-      cmp byte[bx],0		;verifica se esta livre
-      je notbusca        ;caso não seja uma posicao valida
-
-      mov si,[di + register.agency]        ;movo o numero da agencia para si
-		mov dx, 6        
-      xchg dx,cx
-      ag_prt:
-      	lodsb          
-         mov ah, 0xe    
-         mov bl, 2      
-         int 10h                    
-      loop ag_prt
-       
-      xchg cx,dx
-        
+		mov bh, [di + register.validity]
+        cmp bh,0
+        je notbusca        ;caso não seja uma posicao valida
+        lea si,[di + register.agency]        ;movo o numero da agencia para si
+        call print_string
+        call print_enter
 notbusca:					;caso nao precise printar
 	add di, word[register.size];avança para a proxima(si+28)
 	loop ag_busca
@@ -274,21 +264,12 @@ list_accounts:
     mov cx, 10		;move para cx o numero de elementos no vetor
 
     account_show:
-        lea bx, [di + register.validity]
-        cmp byte[bx],0
+        mov bh, [di + register.validity]
+        cmp bh,0
         je not_acc         ;caso não seja uma posicao valida
-        mov si,[di + register.account]	;posicao do valor da conta
-        xchg bx,cx
-        mov cx, 6
-        acc_prt:
-
-        lodsb          
-            mov ah, 0xe    
-            mov bl, 2      
-            int 10h        
-            loop acc_prt
-        xchg cx,bx
-        
+        lea si,[di + register.account]	;posicao do valor da conta
+        call print_string
+        call print_enter
     not_acc:
         add di, word[register.size]	;avança para a proxima(si+28)
     loop account_show
