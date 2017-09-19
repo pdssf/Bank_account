@@ -19,6 +19,7 @@ menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'
 cpf_str db 10, 13,'CPF:  ',0
 agency_str db 10, 13, 'Agency:  ',0
 account_str db 10, 13, 'Account:  ',0
+error_str: db 10, 13, 'Account not found', 0
 check db 'Debug:', 0
 name_str db 10,13,'Name:  ',0
 full_str db 'Nao ha mais espaco. Delete uma conta antes de cadastrar outra.', 10, 13, 0
@@ -76,7 +77,7 @@ start:
    not_2:
    cmp al, '3'					;3 - Edit Account
    jne not_3
-   	call edit_account
+   	;call edit_account
    	jmp menu
 	not_3:    
    cmp al, '4'					;4 - Delete Account
@@ -187,54 +188,48 @@ ret
  
 ;=======================================/*buscando uma conta:*/:
 find_account:
-	call searches_string   ;call query procedure
-	cmp si, 0              ;if procedure return si = 0 there's no account with that number
+	call searches_string   ;call search function
+	cmp si, 0              ;if return si = 0 there's no account with that number
 	je .notFound           ;so jump to .notFound label
+                 
+  mov cx, [si + register.validity]  ;when an account is deleted only the validity byte is changed, so we check if it's not zero
+  cmp cx, 0                         ;that way informations of deleted accounts are'nt printed
+  je .notFound
 
-	mov bl, 2                 
-   mov cx, si
+  mov cx, si
         
 	lea si, [name_str]
 	call print_string
-	xchg cx, si
+	mov si, cx
 	add si, register.name
 	call print_string      ;Print the name
-	mov ah, 0xe
-	mov al, 0xa
-	int 10h
-	mov al, 0xd
-	int 10h
+  call print_enter
+
 
 	lea si, [cpf_str]
 	call print_string
-	xchg cx, si
+	mov si, cx
 	add si, register.CPF
 	call print_string          ;CPF
-	mov ah, 0xe
-	mov al, 0xa
-	int 10h
-	mov al, 0xd
-	int 10h
+  call print_enter
 
 	lea si, [agency_str]
 	call print_string
-	xchg cx, si
+	mov si, cx
 	add si, register.agency
 	call print_string          ;and agency of the account 
-	mov ah, 0xe
-	mov al, 0xa
-	int 10h
-	mov al, 0xd
-	int 10h
+	call print_enter
+
 ret
 
 .notFound:               ;print account not found and return
 	lea si, [error_str]
 	call print_string
+  call print_enter
 ret
 ;========================================deletando uma conta:
 delete_account:
-    call busca
+    call searches_string
     cmp si, 0
     je .naoEncontrada
 
@@ -302,11 +297,12 @@ ret
 read_string:	
 	mov ah, 0 	;
 	int 16h 		;  /*AL <- caracter*/				
-	;stosb 		;	/* tirar de AL->DI*/	
+	;stosb 		;	/* tirar de AL->DI*/
+  cmp al, 13  ;
+  je .read
+
 	mov [di], al
 	inc di
-	cmp al, 13	;
-	je .read
 
 	call print_char ; /*exibe o que esta sendo escrito na leitura*/
 
@@ -355,60 +351,74 @@ searches_validity: ; /*essa funcao procura uma posicao vazia para fazer operacoe
 ret
 ;========================================:
 searches_string:
-    lea si, searching
+    lea si, [account_str]
     call print_string
 
     lea di, [input_string]              
     call read_string                     ;get the account with the user
     mov byte[di+1], 0
+    call print_enter
 
-    lea si, [client_array + register.account]
-    mov di, [input_string]
+    mov si, input_string
+    call print_string
+    call print_enter
+
+    lea si, [client_array]
+    lea bx, [si + register.account]
+    lea di, [input_string]
 
     mov cx, [array_size]
     .compara:                         ;while(cmp_str!=1 && CX>=0)
-        push si
+        push bx
         push di
-        call cmp_str                  ;call procedure to compare the strings 
+        call cmp_str                  ;call procedure to compare the strings
 
         pop ax
         cmp ax, 1                     ;if they are equal it'll return 1
-        je .encontrada                ;so get out the loop
+        je .encontrada                ;so get out the loop  
 
-        add si, word[client_size]             ;else, do i = i + sSize and keep the loop
-        loop .compara                 
+        add si, word[register.size]            ;else, do i = i + sSize and keep the loop
+        lea bx, [si + register.account]
+        loop .compara               
 
         mov si, 0
         ret
 
     .encontrada:
-        sub si, [register.account]                ;si = si - cliente.conta to get the adress of aCliente[i]
+        ;sub si, word[register.account]                ;(si = si - cliente.conta) to get the adress of aCliente[i]
         ret
 ;========================================:
 cmp_str:
     push si                        ;save registers on the stack
     push di
     push cx
+    push ax
     push bp
 
     mov bp, sp
-    add bp, 10
+    add bp, 12
 
     mov di, [bp]                   ;get the strings to compare from the stack
     mov si, [bp + 2]
-
     mov cx, 6
-    repe cmpsb                     ;compare them
-    jz .ret_e                      
 
-    mov word[bp +2], 0                ;if(string1 != string2) return 0
+    loop_cmp:                      ;compare them
+      mov al, byte[si]
+      cmp al, byte[di]
+      jne .ret_ne
+      inc si
+      inc di
+    loop loop_cmp
+                   
+    mov word[bp + 2], 1                ;if(string1 != string2) return 0
     jmp .end
 
-    .ret_e:
-        mov word[bp + 2], 1           ;else return 1
+    .ret_ne:
+        mov word[bp + 2], 0           ;else return 1
 
     .end:
         pop bp
+        pop ax
         pop cx
         pop di
         pop si                    ;unstack the registers
@@ -435,6 +445,6 @@ ret
 
 end:
 jmp $
-times 510-($-$$) db 0		; preenche o resto do setor com zeros 
+;times 510-($-$$) db 0		; preenche o resto do setor com zeros 
 dw 0xaa55					; coloca a assinatura de boot no final
 							; do setor (x86 : little endian)
