@@ -14,7 +14,7 @@ ENDSTRUC
 SEGMENT .data                                   
 
 ;Variable declaration field
-string db 'original:',  0; variavel com 50 espaços de memoria
+position db 'position:',  0
 menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13, '7 - type n to Show accont[n]',10, 13,0
 cpf_str db 10, 13,'CPF:  ',0
 agency_str db 10, 13, 'Agency:  ',0
@@ -26,7 +26,6 @@ full_str db 'Nao ha mais espaco. Delete uma conta antes de cadastrar outra.', 10
 array_size db 10
 input_string times 6 db 0
 searching db 'Searching...', 10, 13, 0
-pos db 'type array pos: ', 0
 
 client: ISTRUC register                ;declaring struc register variable type
     AT register.name, DB 0             
@@ -91,14 +90,14 @@ start:
         call list_agencies
         jmp menu
    not_5:    
-   cmp al, '6'               ;6 - List Accounts
+   cmp al, '6'             ;6 - List Accounts
     jne not_6
         call list_accounts
    	jmp menu
    not_6:
-   cmp al, '7'               ;7 - show account
+   cmp al, '7'             ;7 - show account
    	jne not_7
-   		mov si, pos
+   		mov si, position
    		call print_string
    		call print_enter
    		call read_char
@@ -352,8 +351,8 @@ searches_string:
     call print_string
 
     lea di, [input_string]              
-    call read_string                     ;get the account with the user
-    mov byte[di+1], 0
+    call read_string                   ;get the account with the user
+    ;mov byte[di+1], 0
     call print_enter
 
     mov si, input_string
