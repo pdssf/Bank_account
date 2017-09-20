@@ -15,7 +15,7 @@ SEGMENT .data
 
 ;Variable declaration field
 string db 'original:',  0; variavel com 50 espaços de memoria
-menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13,10, 13,0
+menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13, '7 - type n to Show accont[n]',10, 13,0
 cpf_str db 10, 13,'CPF:  ',0
 agency_str db 10, 13, 'Agency:  ',0
 account_str db 10, 13, 'Account:  ',0
@@ -26,6 +26,7 @@ full_str db 'Nao ha mais espaco. Delete uma conta antes de cadastrar outra.', 10
 array_size db 10
 input_string times 6 db 0
 searching db 'Searching...', 10, 13, 0
+pos db 'type array pos: ', 0
 
 client: ISTRUC register                ;declaring struc register variable type
     AT register.name, DB 0             
@@ -95,6 +96,21 @@ start:
         call list_accounts
    	jmp menu
    not_6:
+   cmp al, '7'               ;7 - show account
+   	jne not_7
+   		mov si, pos
+   		call print_string
+   		call print_enter
+   		call read_char
+   		call print_char
+   		call print_enter
+   		xor ah, ah
+   		sub al, 48
+   		mov cx, ax
+   		lea si, [client_array]
+   		call print_account
+   	jmp menu
+   not_7:
 jmp menu
 ;======================================= Registers a new account:
 register_account:
@@ -276,12 +292,12 @@ list_accounts:
 ret    
 ;========================================:
 read_string:	
-	mov ah, 0 	;
+   mov ah, 0 	;
 	int 16h 		;  /*AL <- caracter*/				
-	;stosb 		;	/* tirar de AL->DI*/
-  cmp al, 13  ;
-  je .read
-
+	;stosb 		;	/* tirar de AL->DI*/	
+	cmp al, 13  ;
+	je .read	
+	
 	mov [di], al
 	inc di
 
@@ -423,7 +439,34 @@ print_enter:
    mov al, 10
    call print_char
 ret
-
+;========================================:
+print_account:
+	cmp cx, 0
+	je fim
+	add si, word[register.size]
+	loop print_account
+	fim:
+	push si
+	lea si, [si+register.name]
+	call print_string
+	call print_enter
+	pop si
+	push si
+	lea si, [si+register.CPF]
+	call print_string
+	call print_enter
+	pop si
+	push si
+	lea si, [si+register.agency]
+	call print_string
+	call print_enter
+	pop si
+	push si
+	lea si, [si+register.account]
+	call print_string
+	call print_enter
+	pop si
+ret
 end:
 jmp $
 ;times 510-($-$$) db 0		; preenche o resto do setor com zeros 
