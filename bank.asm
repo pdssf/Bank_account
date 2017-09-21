@@ -14,18 +14,18 @@ ENDSTRUC
 SEGMENT .data                                   
 
 ;Variable declaration field
-position db 'position:',  0
-menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13, '7 - type n to Show accont[n]',10, 13,0
+position db 13, 10, 'Position:',  0
+menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts',10, 13,10,13, 10, 13, '7 - Show account[ Position ]', '     8 - Quit',10, 13,0
 cpf_str db 10, 13,'CPF:  ',0
 agency_str db 10, 13, 'Agency:  ',0
 account_str db 10, 13, 'Account:  ',0
-error_str: db 10, 13, 'Account not found', 0
+error_str: db 10, 13, 'Account not found.', 0
 check db 'Debug:', 0
 name_str db 10,13,'Name:  ',0
-full_str db 'Nao ha mais espaco. Delete uma conta antes de cadastrar outra.', 10, 13, 0
+full_str db 'Sorry, we ran out of space and therefore we can not create your account, please wait until we expand our servers.', 10, 13, 0
 array_size db 10
 input_string times 6 db 0
-searching db 'Searching...', 10, 13, 0
+searching db '    Searching...', 10, 13, 0
 
 client: ISTRUC register                ;declaring struc register variable type
     AT register.name, DB 0             
@@ -37,13 +37,12 @@ IEND
 
 SEGMENT .bss
 
-client_array: resb 10*register.size ;reserves space for 10 structures
+client_array: resb 10 * register.size ;reserves space for 10 structures
 client_size:	EQU ($ - client_array) / register.size
 
 SEGMENT .text
 
 start:
-
    xor ax,ax
    mov ds,ax
     	
@@ -69,31 +68,37 @@ start:
 	jne not_1
 		call register_account
 		jmp menu    
-	not_1:	
+	
+  not_1:	
 	cmp al, '2'					;2 - Find account
 	jne not_2
 		call find_account
 		jmp menu
-   not_2:
+  
+  not_2:
    cmp al, '3'					;3 - Edit Account
    jne not_3
-   	;call edit_account
+   	call edit_account
    	jmp menu
-	not_3:    
+	
+  not_3:    
    cmp al, '4'					;4 - Delete Account
    jne not_4
       call delete_account
       jmp menu
+   
    not_4: 
    cmp al, '5'					;5 - List Agencies
    jne not_5
         call list_agencies
-        jmp menu
+   jmp menu
+  
    not_5:    
    cmp al, '6'             ;6 - List Accounts
     jne not_6
         call list_accounts
    	jmp menu
+  
    not_6:
    cmp al, '7'             ;7 - show account
    	jne not_7
@@ -109,9 +114,14 @@ start:
    		lea si, [client_array]
    		call print_account
    	jmp menu
-   not_7:
+  
+  not_7:
+   cmp al, '8'              ;8 - Quit
+   je end
+
 jmp menu
-;======================================= Registers a new account:
+
+;=======================================
 register_account:
 
 	;checks validity
@@ -200,8 +210,14 @@ register_account:
 	add al, 48
 	call print_char
 ret
- 
-;=======================================/*buscando uma conta:*/:
+
+;=======================================
+edit_account:
+  call delete_account
+  call register_account
+ret
+
+;=======================================
 find_account:
 	call searches_string   ;call search function
 	cmp si, 0              ;if return si = 0 there's no account with that number
@@ -242,7 +258,8 @@ ret
 	call print_string
   call print_enter
 ret
-;========================================deletando uma conta:
+
+;========================================
 delete_account:
     call searches_string
     cmp si, 0
@@ -255,7 +272,8 @@ delete_account:
         lea si, [error_str]
         call print_string
 ret
-;========================================listar agencias:
+
+;========================================
 list_agencies:
     
 	lea di, [client_array]	;move primeira conta para si: deslocando o tamanho ate agencia
@@ -272,7 +290,8 @@ notbusca:					;caso nao precise printar
 	add di, word[register.size];avança para a proxima(si+28)
 	loop ag_busca
 ret
-;========================================listar contas:
+
+;========================================
 list_accounts:
     lea di, [client_array]	;move primeira conta para dx: 
                                             ;deslocando o tamanho ate conta
@@ -289,6 +308,7 @@ list_accounts:
         add di, word[register.size]	;avança para a proxima(si+28)
     loop account_show
 ret    
+
 ;========================================:
 read_string:	
    mov ah, 0 	;
@@ -306,6 +326,7 @@ read_string:
 	.read:
 	call print_enter
 ret	
+
 ;========================================:
 print_string:
 	;lodsb          ;Carrega um byte de DS:SI em AL e depois incrementa SI 	
@@ -319,12 +340,14 @@ print_string:
 	jmp print_string
 	.printed:
 ret
+
 ;========================================:
 miscmp:
 	;/*compara 2 strings em ES:DI e DS:SI não esquecer de setar cx com o tamanho das strings*/
 	repe cmpsb			;/*repete enquanto cx!=0 e ZF==1*/
 	;/*retorna, e deve ser verificado o conteudo de CX*/
 ret
+
 ;========================================:
 searches_validity: ; /*essa funcao procura uma posicao vazia para fazer operacoes (ex:register conta)*/
 	lea si, [client_array]					;recebe a posicao inicial do array struc
@@ -345,6 +368,7 @@ searches_validity: ; /*essa funcao procura uma posicao vazia para fazer operacoe
    call print_string
    mov dx, 1
 ret
+
 ;========================================:
 searches_string:
     lea si, [account_str]
@@ -383,6 +407,7 @@ searches_string:
     .encontrada:
         ;sub si, word[register.account]                ;(si = si - cliente.conta) to get the adress of aCliente[i]
         ret
+
 ;========================================:
 cmp_str:
     push si                        ;save registers on the stack
@@ -420,17 +445,20 @@ cmp_str:
         pop si                    ;unstack the registers
 
 ret 2                     ;return
+
 ;========================================
 print_char:
 	mov ah, 0xe  ;code of the instruction to print a char which is in al
    mov bl, 0xf
 	int 10h   
 ret
+
 ;========================================:
 read_char:	
 	mov ah, 0
    int 16h
 ret
+
 ;========================================:
 print_enter:	
 	mov al, 13	;chama um enter para descer a tela
@@ -438,6 +466,7 @@ print_enter:
    mov al, 10
    call print_char
 ret
+
 ;========================================:
 print_account:
 	cmp cx, 0
@@ -466,8 +495,14 @@ print_account:
 	call print_enter
 	pop si
 ret
+
 end:
-jmp $
-;times 510-($-$$) db 0		; preenche o resto do setor com zeros 
-dw 0xaa55					; coloca a assinatura de boot no final
-							; do setor (x86 : little endian)
+  ;Turn off the system
+  mov ax,0x5307 
+  mov bx,0x0001
+  mov cx,0x0003
+  int 0x15
+
+  ; jmp $
+  ; times 510-($-$$) db 0		;fulfills the rest of the bootsect with zeroes
+  ; dw 0xaa55					      ;boot signature
