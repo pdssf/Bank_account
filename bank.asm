@@ -14,15 +14,15 @@ ENDSTRUC
 SEGMENT .data                                   
 
 ;Variable declaration field
-position db 'position:',  0
-menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13, '7 - type n to Show accont[n]',10, 13,0
+position db 'n:',  0
+menu_str db '                        Choose your option:', 10, 13,10, 13,10,13,'1 - Register New Account', '         2 - Query Account', '         3 - Edit Account', 10, 13,10, 13,10,13, '4 - Delete Account', '               5 - List Agencies', '         6 - List Accounts', 10, 13, 10, 13, 10, 13, '7 - Type n to Show account[n]',10, 13,0
 cpf_str db 10, 13,'CPF:  ',0
 agency_str db 10, 13, 'Agency:  ',0
 account_str db 10, 13, 'Account:  ',0
 error_str: db 10, 13, 'Account not found', 0
 check db 'Debug:', 0
 name_str db 10,13,'Name:  ',0
-full_str db 'Nao ha mais espaco. Delete uma conta antes de cadastrar outra.', 10, 13, 0
+full_str db 'No more space to allocate account.', 10, 13, 0
 array_size db 10
 input_string times 6 db 0
 searching db 'Searching...', 10, 13, 0
